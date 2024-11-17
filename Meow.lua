@@ -646,21 +646,152 @@ local Tab = Window:CreateTab("TP", 11767069582) -- Title, Image
    local Divider = Tab:CreateDivider()
 
    local Button = Tab:CreateButton({
-      Name = "Map 'Fix'",
+      Name = "Fix One Map",
       Callback = function()
-      -- The function that takes place when the button is pressed
+        local function remote()
+            local player = game.Players.LocalPlayer
+            local backpack = player.Backpack
+            local character = player.Character or player.CharacterAdded:Wait()
+        
+            -- Function to equip all Treasure Maps
+            local function equipTreasureMaps()
+                for item in ipairs(backpack:GetChildren()) do
+                    if item:IsA("Tool") and string.find(item.Name, "Treasure Map") then
+                        item.Parent = character -- Equip the map
+                    end
+                end
+            end
+        
+            equipTreasureMaps() -- Equip all Treasure Maps
+        
+            -- Invoke the server for all NPCs with "Marrow" in their name
+            local npcs = game:GetService("Workspace").world.npcs:GetChildren()
+            for npc in ipairs(npcs) do
+                if npc:IsA("Model") and string.find(npc.Name, "Marrow") then
+                    if npc:FindFirstChild("treasure") then
+                        npc.treasure.repairmap:InvokeServer(true)
+                        break -- Exit after invoking for the first found NPC
+                    end
+                end
+            end
+        
+            -- Move all Treasure Maps back to the backpack
+            for _, item in ipairs(character:GetChildren()) do
+                if item:IsA("Tool") and string.find(item.Name, "Treasure Map") then
+                    item.Parent = backpack -- Move back to backpack
+                end
+            end
+        
+            print("All Treasure Maps have been processed and returned to the backpack.")
+        end
+        
+        remote()
       end,
    })
 
    local Button = Tab:CreateButton({
-      Name = "Tp To chest",
+      Name = "Fix All Maps",
       Callback = function()
-      -- The function that takes place when the button is pressed
+        local function remote()
+            local player = game.Players.LocalPlayer
+            local backpack = player.Backpack
+            local character = player.Character or player.CharacterAdded:Wait()
+        
+            -- Function to equip all Treasure Maps
+            local function equipTreasureMaps()
+                for _, item in ipairs(backpack:GetChildren()) do
+                    if item:IsA("Tool") and string.find(item.Name, "Treasure Map") then
+                        item.Parent = character -- Equip the map
+                    end
+                end
+            end
+        
+            equipTreasureMaps() -- Equip all Treasure Maps
+        
+            -- Collect all Treasure Maps in the character and backpack
+            local maps = {}
+            
+            for _, item in ipairs(character:GetChildren()) do
+                if item:IsA("Tool") and string.find(item.Name, "Treasure Map") then
+                    table.insert(maps, item)
+                end
+            end
+            
+            for _, item in ipairs(backpack:GetChildren()) do
+                if item:IsA("Tool") and string.find(item.Name, "Treasure Map") then
+                    table.insert(maps, item)
+                end
+            end
+        
+            -- Invoke server for each map with a cooldown
+            local npcs = game:GetService("Workspace").world.npcs:GetChildren()
+            for _, map in ipairs(maps) do
+                for _, npc in ipairs(npcs) do
+                    if npc:IsA("Model") and string.find(npc.Name, "Marrow") then
+                        if npc:FindFirstChild("treasure") then
+                            npc.treasure.repairmap:InvokeServer(true)
+                            wait(0.069) -- Cooldown between invocations
+                            break -- Exit after invoking for the first found NPC
+                        end
+                    end
+                end
+            end
+        
+            -- Move all Treasure Maps back to the backpack
+            for _, item in ipairs(character:GetChildren()) do
+                if item:IsA("Tool") and string.find(item.Name, "Treasure Map") then
+                    item.Parent = backpack -- Move back to backpack
+                end
+            end
+        
+            print("All Treasure Maps have been processed and returned to the backpack.")
+        end
+        
+        remote()
       end,
    })
 
 
+   local Button = Tab:CreateButton({
+    Name = "Teleport To Jack Marrow",
+    Callback = function()
+        local player = game.Players.LocalPlayer
+        local character = player.Character
+        local rootPart = character:WaitForChild("HumanoidRootPart")
+        rootPart.Position = Vector3.new(-2827.04931640625, 214.79022216796875, 1516.9306640625)
+    end,
+ })
 
+ local Paragraph = Tab:CreateParagraph({Title = "Note", Content = "To use the map fix(ing) talk to Jack marrow before using"})
+
+ local Divider = Tab:CreateDivider()
+
+ local Button = Tab:CreateButton({
+    Name = "Chest",
+    Callback = function()
+        local function runScript()
+            -- Loop through all chests in the workspace
+            for i, v in pairs(workspace.world.chests:GetDescendants()) do
+                if v:IsA("Part") and v:FindFirstChild("ChestSetup") then
+                    -- Teleport player to the first chest found
+                    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame
+                    return -- Exit after teleporting to the first chest
+                end
+            end
+        
+            -- Loop through all descendants to find proximity prompts
+            for i, v in ipairs(game:GetService("Workspace"):GetDescendants()) do
+                if v.ClassName == "ProximityPrompt" then
+                    -- Set proximity prompt hold duration to 0
+                    v.HoldDuration = 0
+                end
+            end
+        end
+        
+        -- Call the runScript function immediately when the script is executed
+        runScript()
+    end,
+ })
 
 local Tab = Window:CreateTab("Appraiser", 11767069582) -- Title, Image
     local Section = Tab:CreateSection("Appraiser")
