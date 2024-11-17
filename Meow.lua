@@ -639,7 +639,7 @@ local Tab = Window:CreateTab("TP", 11767069582) -- Title, Image
        elseif Options[1] == "Earmark Island" then
            rootPart.Position = Vector3.new(1246.6859130859375, 147.10130310058594, 509.4786071777344)
        elseif Options[1] == "The Depths" then
-           rootPart.Position = Vector3.new(568.153, -701.881, 1230.85)
+           rootPart.Position = Vector3.new(937.289794921875, -738.0791015625, 1458.1849365234375)
        end
    end,
    })
