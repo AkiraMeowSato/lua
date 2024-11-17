@@ -282,7 +282,7 @@ local Tab = Window:CreateTab("Fishing", 11767069582)
       end,
   })
 
-
+  local Divider = Tab:CreateDivider()
 
 
      local Toggle = Tab:CreateToggle({
@@ -506,12 +506,29 @@ local Tab = Window:CreateTab("Fishing", 11767069582)
         end,
      })
  
+     local Divider = Tab:CreateDivider()
+
+     local Button = Tab:CreateButton({
+        Name = " Sell All (Need Merchant Around)",
+        Callback = function()
+            local function remote()
+                local npcs = game:GetService("Workspace").world.npcs:GetChildren()
+                for _, npc in ipairs(npcs) do
+                    if npc:IsA("Model") and string.find(npc.Name, "Merchant") then
+                        if npc:FindFirstChild("merchant") and npc.merchant:FindFirstChild("sellall") then
+                            npc.merchant.sellall:InvokeServer(true)
+                            return
+                        end
+                    end
+                end
+                print("No Merchant NPC found.")
+            end
+            remote()
+        end,
+     })
 
 
-
-
-
-
+     local Paragraph = Tab:CreateParagraph({Title = "Note", Content = "If u use 'sell all' make sure u have talked to the merchant beforehand"})
 
 
 
