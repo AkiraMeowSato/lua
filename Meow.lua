@@ -4,6 +4,17 @@ if game.PlaceId == 16732694052 then
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 
+while true do
+    wait(1.69)
+    for i,v in ipairs(game:GetService("Workspace"):GetDescendants()) do
+     if v.ClassName == "ProximityPrompt" then
+      v.HoldDuration = 0
+     end
+    end
+    end
+
+
+
 -- MAIN UI
 local Window = Rayfield:CreateWindow({
     Name = "Average Hub",
@@ -950,6 +961,8 @@ local Tab = Window:CreateTab("Credits", 11767069582) -- Title, Image
 -- NOTIFICATION ON EXECUTE
 
 
+
+
  Rayfield:Notify({
     Title = "Notification!",
     Content = "Please join our discord in Credits, it helps us alot",
@@ -967,5 +980,10 @@ local Tab = Window:CreateTab("Credits", 11767069582) -- Title, Image
  
  },
  })
+
+
+
+
+
 Rayfield:LoadConfiguration()
 end
