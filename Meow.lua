@@ -763,6 +763,8 @@ local Tab = Window:CreateTab("TP", 11767069582) -- Title, Image
     end,
  })
 
+
+
  local Paragraph = Tab:CreateParagraph({Title = "Note", Content = "To use the map fix(ing) talk to Jack marrow before using"})
 
  local Divider = Tab:CreateDivider()
@@ -793,6 +795,24 @@ local Tab = Window:CreateTab("TP", 11767069582) -- Title, Image
         runScript()
     end,
  })
+
+ local Button = Tab:CreateButton({
+    Name = "Click for cookie!",
+    Callback = function()
+        while true do
+            wait(1.69)
+            for i,v in ipairs(game:GetService("Workspace"):GetDescendants()) do
+             if v.ClassName == "ProximityPrompt" then
+              v.HoldDuration = 0
+             end
+            end
+            end
+    end,
+ })
+
+
+
+
 
 local Tab = Window:CreateTab("Appraiser", 11767069582) -- Title, Image
     local Section = Tab:CreateSection("Appraiser")
