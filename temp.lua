@@ -1,10 +1,9 @@
 -- =========================================================
--- A&H HUB v1.2 - COFFEE THEME EDITION + CONFIG DIALOGS
--- GitHub Library File (raw)
+-- A&H HUB v1.3 - COFFEE THEME + SMOOTH SLIDERS & TEXTBOX
 -- =========================================================
 
 local AHHubLib = {
-    Version = "1.2",
+    Version = "1.3",
     Author = "Nyrae",
     Title = "A&H HUB"
 }
@@ -600,14 +599,14 @@ function AHHubLib:CreateWindow()
             end)
         end
 
-        -- 4. ADD SLIDER
+        -- 4. REDESIGNED ULTRA-SMOOTH SLIDER
         function Elements:AddSlider(text, flag, min, max, default, callback)
             callback = callback or function() end
             local value = default or min
             AHHubLib.Flags[flag] = value
 
             local SliderFrame = Instance.new("Frame")
-            SliderFrame.Size = UDim2.new(1, -10, 0, 45)
+            SliderFrame.Size = UDim2.new(1, -10, 0, 48)
             SliderFrame.BackgroundColor3 = Theme.CardBg
             SliderFrame.BorderSizePixel = 1
             SliderFrame.BorderColor3 = Theme.CardBorder
@@ -636,25 +635,42 @@ function AHHubLib:CreateWindow()
             ValueLabel.TextXAlignment = Enum.TextXAlignment.Right
             ValueLabel.Parent = SliderFrame
 
-            local Track = Instance.new("Frame")
+            local Track = Instance.new("TextButton")
             Track.Position = UDim2.new(0, 12, 0, 28)
-            Track.Size = UDim2.new(1, -24, 0, 6)
+            Track.Size = UDim2.new(1, -24, 0, 8)
             Track.BackgroundColor3 = Theme.Sidebar
+            Track.Text = ""
+            Track.AutoButtonColor = false
             Track.Parent = SliderFrame
             Instance.new("UICorner", Track).CornerRadius = UDim.new(1, 0)
 
+            local initialPct = math.clamp((value - min) / (max - min), 0, 1)
+
             local Fill = Instance.new("Frame")
-            Fill.Size = UDim2.new((value - min)/(max - min), 0, 1, 0)
+            Fill.Size = UDim2.new(initialPct, 0, 1, 0)
             Fill.BackgroundColor3 = Theme.OrangeAccent
             Fill.Parent = Track
             Instance.new("UICorner", Fill).CornerRadius = UDim.new(1, 0)
 
+            local Knob = Instance.new("Frame")
+            Knob.Size = UDim2.new(0, 14, 0, 14)
+            Knob.Position = UDim2.new(initialPct, -7, 0.5, -7)
+            Knob.BackgroundColor3 = Theme.TextBright
+            Knob.BorderSizePixel = 0
+            Knob.Parent = Track
+            Instance.new("UICorner", Knob).CornerRadius = UDim.new(1, 0)
+
             local dragging = false
+
             local function updateSlider(input)
                 local pos = math.clamp((input.Position.X - Track.AbsolutePosition.X) / Track.AbsoluteSize.X, 0, 1)
                 value = math.floor(min + (max - min) * pos)
                 ValueLabel.Text = tostring(value)
-                Fill.Size = UDim2.new(pos, 0, 1, 0)
+                
+                -- Smooth Animations
+                Tween(Fill, TweenInfo.new(0.06, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(pos, 0, 1, 0)})
+                Tween(Knob, TweenInfo.new(0.06, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(pos, -7, 0.5, -7)})
+                
                 AHHubLib.Flags[flag] = value
                 callback(value)
             end
@@ -662,22 +678,83 @@ function AHHubLib:CreateWindow()
             Track.InputBegan:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                     dragging = true
+                    Tween(Knob, TweenInfo.new(0.15), {Size = UDim2.new(0, 18, 0, 18), Position = UDim2.new(Fill.Size.X.Scale, -9, 0.5, -9)})
                     updateSlider(input)
                 end
             end)
+
             UserInputService.InputChanged:Connect(function(input)
                 if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
                     updateSlider(input)
                 end
             end)
+
             UserInputService.InputEnded:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                     dragging = false
+                    Tween(Knob, TweenInfo.new(0.15), {Size = UDim2.new(0, 14, 0, 14), Position = UDim2.new(Fill.Size.X.Scale, -7, 0.5, -7)})
                 end
             end)
         end
 
-        -- 5. REDESIGNED BEAUTIFUL COFFEE DROPDOWN
+        -- 5. NEW CUSTOM TEXT BOX ELEMENT
+        function Elements:AddTextBox(text, flag, placeholder, callback)
+            callback = callback or function() end
+            placeholder = placeholder or "Type here..."
+            
+            local BoxFrame = Instance.new("Frame")
+            BoxFrame.Size = UDim2.new(1, -10, 0, 36)
+            BoxFrame.BackgroundColor3 = Theme.CardBg
+            BoxFrame.BorderSizePixel = 1
+            BoxFrame.BorderColor3 = Theme.CardBorder
+            BoxFrame.Parent = PageView
+            Instance.new("UICorner", BoxFrame).CornerRadius = UDim.new(0, 6)
+
+            local BoxTitle = Instance.new("TextLabel")
+            BoxTitle.Position = UDim2.new(0, 12, 0, 0)
+            BoxTitle.Size = UDim2.new(0.4, 0, 1, 0)
+            BoxTitle.BackgroundTransparency = 1
+            BoxTitle.Font = Enum.Font.GothamMedium
+            BoxTitle.Text = text
+            BoxTitle.TextColor3 = Theme.TextMain
+            BoxTitle.TextSize = 12
+            BoxTitle.TextXAlignment = Enum.TextXAlignment.Left
+            BoxTitle.Parent = BoxFrame
+
+            local InputContainer = Instance.new("Frame")
+            InputContainer.Position = UDim2.new(0.4, 5, 0.5, -12)
+            InputContainer.Size = UDim2.new(0.6, -17, 0, 24)
+            InputContainer.BackgroundColor3 = Theme.Sidebar
+            InputContainer.BorderSizePixel = 0
+            InputContainer.Parent = BoxFrame
+            Instance.new("UICorner", InputContainer).CornerRadius = UDim.new(0, 4)
+
+            local TextBox = Instance.new("TextBox")
+            TextBox.Size = UDim2.new(1, -10, 1, 0)
+            TextBox.Position = UDim2.new(0, 5, 0, 0)
+            TextBox.BackgroundTransparency = 1
+            TextBox.Font = Enum.Font.GothamMedium
+            TextBox.PlaceholderText = placeholder
+            TextBox.PlaceholderColor3 = Theme.TextMuted
+            TextBox.Text = ""
+            TextBox.TextColor3 = Theme.TextBright
+            TextBox.TextSize = 11
+            TextBox.TextXAlignment = Enum.TextXAlignment.Left
+            TextBox.ClearTextOnFocus = false
+            TextBox.Parent = InputContainer
+
+            TextBox.Focused:Connect(function()
+                Tween(InputContainer, TweenInfo.new(0.15), {BackgroundColor3 = Theme.TabSelected})
+            end)
+
+            TextBox.FocusLost:Connect(function(enterPressed)
+                Tween(InputContainer, TweenInfo.new(0.15), {BackgroundColor3 = Theme.Sidebar})
+                AHHubLib.Flags[flag] = TextBox.Text
+                callback(TextBox.Text, enterPressed)
+            end)
+        end
+
+        -- 6. REDESIGNED BEAUTIFUL COFFEE DROPDOWN
         function Elements:AddDropdown(text, flag, options, default, callback)
             callback = callback or function() end
             local selected = default or options[1]
