@@ -1,5 +1,6 @@
 -- =========================================================
 -- A&H HUB v1.2 - COFFEE THEME EDITION + CONFIG DIALOGS
+-- GitHub Library File (raw)
 -- =========================================================
 
 local AHHubLib = {
@@ -828,3 +829,8 @@ function AHHubLib:CreateWindow()
 
     return Controller
 end
+
+-- =========================================================
+-- RETURN LIBRARY TABLE FOR LOADSTRING
+-- =========================================================
+return AHHubLib
