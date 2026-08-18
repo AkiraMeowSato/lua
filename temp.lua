@@ -753,7 +753,7 @@ function AHHubLib:CreateWindow()
                 callback(TextBox.Text, enterPressed)
             end)
         end
-
+		Elements.addtextbox = Elements.AddTextBox
         -- 6. REDESIGNED BEAUTIFUL COFFEE DROPDOWN
         function Elements:AddDropdown(text, flag, options, default, callback)
             callback = callback or function() end
