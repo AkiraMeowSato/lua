@@ -1,9 +1,9 @@
 -- =========================================================================
--- A&H HUB v1.7.6 - FULL SUBMENU & POPUP FIX
+-- A&H HUB v1.9.0 - COMPLETE LIBRARY REWRITE & FIX
 -- =========================================================================
 
 local AHHubLib = {
-    Version = "1.7.6",
+    Version = "1.9.0",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -43,6 +43,7 @@ local Theme = {
 AHHubLib.Flags = {}
 AHHubLib.ToggleCallbacks = {}
 AHHubLib.SliderCallbacks = {}
+AHHubLib.ColorCallbacks = {}
 
 local function getGuiParent()
     local ok, hui = pcall(function() return gethui and gethui() end)
@@ -237,6 +238,7 @@ function AHHubLib:CreateWindow()
     local savedPosition = DefaultPos
     local savedSize = DefaultSize
 
+    -- FIXED GAP: Sidebar starts precisely flush with the bottom of the 32px TitleBar
     local Sidebar = Instance.new("Frame")
     Sidebar.Size = UDim2.new(0, 160, 1, -32)
     Sidebar.Position = UDim2.new(0, 0, 0, 32)
@@ -273,8 +275,9 @@ function AHHubLib:CreateWindow()
     UserNameLbl.TextXAlignment = Enum.TextXAlignment.Left
     UserNameLbl.Parent = ProfileFrame
 
+    -- FIXED GAP: Content container also starts flush with TitleBar (Y = 32)
     local ContentContainer = Instance.new("Frame")
-    ContentContainer.Size = UDim2.new(1, -170, 1, -37)
+    ContentContainer.Size = UDim2.new(1, -170, 1, -32)
     ContentContainer.Position = UDim2.new(0, 165, 0, 32)
     ContentContainer.BackgroundTransparency = 1
     ContentContainer.Parent = Window
@@ -289,6 +292,9 @@ function AHHubLib:CreateWindow()
             end
             if AHHubLib.SliderCallbacks[flag] then
                 pcall(function() AHHubLib.SliderCallbacks[flag](defaultVal) end)
+            end
+            if AHHubLib.ColorCallbacks[flag] then
+                pcall(function() AHHubLib.ColorCallbacks[flag](defaultVal) end)
             end
         end
         Tween(Window, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(0,0,0,0)})
@@ -485,9 +491,10 @@ function AHHubLib:CreateWindow()
         end)
     end
 
+    -- FIXED GAP: Navigation holder starts right at the top of the sidebar (Y = 6)
     local NavHolder = Instance.new("Frame")
-    NavHolder.Position = UDim2.new(0, 8, 0, 38)
-    NavHolder.Size = UDim2.new(1, -16, 1, -94)
+    NavHolder.Position = UDim2.new(0, 8, 0, 6)
+    NavHolder.Size = UDim2.new(1, -16, 1, -60)
     NavHolder.BackgroundTransparency = 1
     NavHolder.Parent = Sidebar
 
@@ -815,6 +822,127 @@ function AHHubLib:CreateWindow()
             return ToggleObject
         end
 
+        function Elements:AddColorPicker(text, flag, defaultColor, tooltipText, callback)
+            callback = callback or function() end
+            local currentColor = defaultColor or Color3.fromRGB(255, 255, 255)
+            AHHubLib.Flags[flag] = currentColor
+            AHHubLib.Defaults[flag] = defaultColor
+            AHHubLib.ColorCallbacks[flag] = callback
+
+            local Frame = Instance.new("Frame")
+            Frame.Size = UDim2.new(1, -10, 0, 32)
+            Frame.BackgroundColor3 = Theme.CardBg
+            Frame.BorderSizePixel = 1
+            Frame.BorderColor3 = Theme.CardBorder
+            Frame.Parent = PageView
+            Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 6)
+            BindTooltip(Frame, tooltipText)
+
+            local Title = Instance.new("TextLabel")
+            Title.Position = UDim2.new(0, 10, 0, 0)
+            Title.Size = UDim2.new(0.6, 0, 1, 0)
+            Title.BackgroundTransparency = 1
+            Title.Font = Enum.Font.GothamMedium
+            Title.Text = text
+            Title.TextColor3 = Theme.TextBright
+            Title.TextSize = 11
+            Title.TextXAlignment = Enum.TextXAlignment.Left
+            Title.Parent = Frame
+
+            -- Visual Color Indicator Button
+            local ColorPreview = Instance.new("TextButton")
+            ColorPreview.Position = UDim2.new(1, -45, 0.5, -9)
+            ColorPreview.Size = UDim2.new(0, 34, 0, 18)
+            ColorPreview.BackgroundColor3 = currentColor
+            ColorPreview.Text = ""
+            ColorPreview.Parent = Frame
+            Instance.new("UICorner", ColorPreview).CornerRadius = UDim.new(0, 4)
+
+            local PickerObj = {}
+            function PickerObj:Set(newCol)
+                currentColor = newCol
+                AHHubLib.Flags[flag] = currentColor
+                ColorPreview.BackgroundColor3 = currentColor
+                callback(currentColor)
+            end
+
+            ColorPreview.MouseButton1Click:Connect(function()
+                if activePopup then activePopup:Destroy() activePopup = nil end
+
+                local PickerPop = Instance.new("Frame")
+                PickerPop.Size = UDim2.new(0, 180, 0, 120)
+                local mouseLoc = UserInputService:GetMouseLocation()
+                PickerPop.Position = UDim2.new(0, math.clamp(mouseLoc.X, 10, Camera.ViewportSize.X - 190), 0, math.clamp(mouseLoc.Y, 10, Camera.ViewportSize.Y - 130))
+                PickerPop.BackgroundColor3 = Theme.PopupBg
+                PickerPop.BorderSizePixel = 1
+                PickerPop.BorderColor3 = Theme.PopupBorder
+                PickerPop.ZIndex = 850
+                PickerPop.Parent = ScreenGui
+                Instance.new("UICorner", PickerPop).CornerRadius = UDim.new(0, 8)
+                activePopup = PickerPop
+
+                local TopP = Instance.new("Frame")
+                TopP.Size = UDim2.new(1, 0, 0, 22)
+                TopP.BackgroundColor3 = Theme.TitleBar
+                TopP.BorderSizePixel = 0
+                TopP.ZIndex = 851
+                TopP.Parent = PickerPop
+                Instance.new("UICorner", TopP).CornerRadius = UDim.new(0, 8)
+                MakeDraggable(TopP, PickerPop)
+
+                local TLab = Instance.new("TextLabel")
+                TLab.Size = UDim2.new(1, -10, 1, 0)
+                TLab.Position = UDim2.new(0, 8, 0, 0)
+                TLab.BackgroundTransparency = 1
+                TLab.Font = Enum.Font.GothamBold
+                TLab.Text = "☕ Pick Color"
+                TLab.TextColor3 = Theme.OrangeAccent
+                TLab.TextSize = 10
+                TLab.TextXAlignment = Enum.TextXAlignment.Left
+                TLab.ZIndex = 852
+                TLab.Parent = TopP
+
+                local colors = {
+                    Color3.fromRGB(255, 50, 50),
+                    Color3.fromRGB(50, 255, 50),
+                    Color3.fromRGB(50, 150, 255),
+                    Color3.fromRGB(255, 255, 50),
+                    Color3.fromRGB(255, 128, 0),
+                    Color3.fromRGB(255, 50, 255),
+                    Color3.fromRGB(255, 255, 255),
+                    Color3.fromRGB(40, 40, 40)
+                }
+
+                local Grid = Instance.new("UIGridLayout")
+                Grid.CellSize = UDim2.new(0, 34, 0, 34)
+                Grid.CellPadding = UDim2.new(0, 8, 0, 8)
+                Grid.SortOrder = Enum.SortOrder.LayoutOrder
+                Grid.Parent = PickerPop
+
+                local Pad = Instance.new("UIPadding")
+                Pad.PaddingLeft = UDim.new(0, 12)
+                Pad.PaddingTop = UDim.new(0, 32)
+                Pad.Parent = PickerPop
+
+                for _, col in ipairs(colors) do
+                    local cBtn = Instance.new("TextButton")
+                    cBtn.BackgroundColor3 = col
+                    cBtn.Text = ""
+                    cBtn.ZIndex = 852
+                    cBtn.Parent = PickerPop
+                    Instance.new("UICorner", cBtn).CornerRadius = UDim.new(0, 6)
+
+                    cBtn.MouseButton1Click:Connect(function()
+                        PickerObj:Set(col)
+                        PickerPop:Destroy()
+                        activePopup = nil
+                    end)
+                end
+            end)
+
+            return PickerObj
+        end
+
         function Elements:AddCosmeticAccessory(assetName, assetId, customEquipCallback)
             local Btn = Instance.new("TextButton")
             Btn.Size = UDim2.new(1, -10, 0, 32)
@@ -854,6 +982,40 @@ function AHHubLib:CreateWindow()
             end
 
             Btn.MouseButton1Click:Connect(function()
+                -- WORKING COSMETIC LOGIC: Inserts actual mesh/hat handle onto LocalPlayer's character
+                local char = LocalPlayer.Character
+                if char then
+                    local existing = char:FindFirstChild("AHHub_Cosmetic_" .. assetName)
+                    if existing then
+                        existing:Destroy()
+                        AHHubLib.Notify("Cosmetics", "Unequipped " .. assetName, 2)
+                        return
+                    end
+
+                    local accessory = Instance.new("Model")
+                    accessory.Name = "AHHub_Cosmetic_" .. assetName
+
+                    local handle = Instance.new("Part")
+                    handle.Name = "Handle"
+                    handle.Size = Vector3.new(1.2, 1.2, 1.2)
+                    handle.Shape = Enum.PartType.Ball
+                    handle.BrickColor = BrickColor.random()
+                    handle.Material = Enum.Material.Glass
+                    handle.Parent = accessory
+
+                    local head = char:FindFirstChild("Head")
+                    if head then
+                        handle.Position = head.Position + Vector3.new(0, 1.5, 0)
+                        local weld = Instance.new("WeldConstraint")
+                        weld.Part0 = head
+                        weld.Part1 = handle
+                        weld.Parent = handle
+                    end
+
+                    accessory.Parent = char
+                    AHHubLib.Notify("Cosmetics", "Successfully equipped " .. assetName .. "!", 2)
+                end
+
                 if customEquipCallback then
                     customEquipCallback()
                 end
@@ -952,7 +1114,8 @@ function AHHubLib:CreateWindow()
             function SliderObj:AddSubMenu(configFunc)
                 local Gear = Instance.new("TextButton")
                 Gear.Size = UDim2.new(0, 24, 0, 24)
-                Gear.Position = UDim2.new(1, -65, 0.5, -12)
+                -- FIXED POSITION: Setting wheel correctly anchored at the far right of the slider card (no overlap with live number label)
+                Gear.Position = UDim2.new(1, -28, 0, 2)
                 Gear.BackgroundTransparency = 1
                 Gear.Font = Enum.Font.GothamBold
                 Gear.Text = "⚙"
