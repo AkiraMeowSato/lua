@@ -3,7 +3,7 @@
 -- =========================================================================
 
 local AHHubLib = {
-    Version = "1.9.7",
+    Version = "1.9.8",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -1451,3 +1451,6 @@ task.spawn(function()
 
     AHHubLib:Notify("A&H Hub Ready", "All components, custom color mixer, and ESP successfully loaded!", 4)
 end)
+
+-- At the very end of temp.lua:
+return AHHubLib
