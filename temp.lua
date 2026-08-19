@@ -1,9 +1,9 @@
 -- =========================================================================
--- A&H HUB v1.7.3 - FIXED SUB-MENU BUILDER & RIGHT CTRL TOGGLE
+-- A&H HUB v1.7.4 - SUBMENU & NOTIFICATION FIXES
 -- =========================================================================
 
 local AHHubLib = {
-    Version = "1.7.3",
+    Version = "1.7.4",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -26,7 +26,7 @@ local Theme = {
     CardBg = Color3.fromRGB(42, 32, 26),
     CardBorder = Color3.fromRGB(80, 60, 48),
     TitleBar = Color3.fromRGB(36, 26, 21),
-    PopupBg = Color3.fromRGB(32, 23, 18),
+    PopupBg = Color3.fromRGB(45, 34, 28), -- Lighter background for popup to contrast elements
     TextBright = Color3.fromRGB(255, 255, 255),
     TextMain = Color3.fromRGB(240, 225, 210),
     TextMuted = Color3.fromRGB(190, 165, 145),
@@ -352,7 +352,6 @@ function AHHubLib:CreateWindow()
         duration = duration or 3
         local Card = Instance.new("Frame")
         Card.Size = UDim2.new(0, 250, 0, 55)
-        Card.Position = UDim2.new(0, 20, 0, 15)
         Card.BackgroundColor3 = Theme.CardBg
         Card.BackgroundTransparency = 0.1
         Card.BorderSizePixel = 1
@@ -382,6 +381,22 @@ function AHHubLib:CreateWindow()
         Sub.TextXAlignment = Enum.TextXAlignment.Left
         Sub.TextWrapped = true
         Sub.Parent = Card
+
+        task.delay(duration, function()
+            if Card and Card.Parent then
+                Tween(Card, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {BackgroundTransparency = 1})
+                for _, child in ipairs(Card:GetDescendants()) do
+                    if child:IsA("TextLabel") then
+                        Tween(child, TweenInfo.new(0.3), {TextTransparency = 1})
+                    end
+                end
+                task.delay(0.3, function()
+                    if Card and Card.Parent then
+                        Card:Destroy()
+                    end
+                end)
+            end
+        end)
     end
 
     ShowConfirmation = function(title, message, onAccept)
@@ -629,7 +644,7 @@ function AHHubLib:CreateWindow()
                 Gear.Text = "⚙"
                 Gear.TextColor3 = Theme.TextMuted
                 Gear.TextSize = 12
-                Gear.ZIndex = 10
+                Gear.ZIndex = 805
                 Gear.Parent = Btn
                 Gear.MouseButton1Click:Connect(function()
                     task.spawn(function()
@@ -700,7 +715,7 @@ function AHHubLib:CreateWindow()
                 Gear.Text = "⚙"
                 Gear.TextColor3 = Theme.TextMuted
                 Gear.TextSize = 12
-                Gear.ZIndex = 10
+                Gear.ZIndex = 805
                 Gear.Parent = Frame
                 Gear.MouseButton1Click:Connect(function()
                     task.spawn(function()
