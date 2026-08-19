@@ -624,7 +624,6 @@ function AHHubLib:CreateWindow()
             return self:AddToggle("Enable " .. (espName or "ESP"), "ESP_" .. (espName or "Renderer"), false, "Toggle native drawing ESP", callback)
         end
 
-        -- Equips the exact requested Asset ID 12283471793 (Chinese Traditional Bamboo Hat)
         function Elements:AddCosmeticAccessory(assetName, assetId)
             local Btn = Instance.new("TextButton")
             Btn.Size = UDim2.new(1, -10, 0, 32)
@@ -668,7 +667,6 @@ function AHHubLib:CreateWindow()
                         end
                     end
 
-                    -- Fallback procedural shape if asset loading restriction blocks runtime catalog fetching
                     local hatModel = Instance.new("Model")
                     hatModel.Name = "AHHub_Cosmetic_" .. assetName
 
