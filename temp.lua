@@ -1,9 +1,9 @@
 -- =========================================================
--- A&H HUB v1.5.7 - NATIVE DRAWING ESP RENDERER API
+-- A&H HUB v1.5.8 - FULLY FEATURED NATIVE DRAWING ESP API
 -- =========================================================
 
 local AHHubLib = {
-    Version = "1.5.7",
+    Version = "1.5.8",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -520,16 +520,6 @@ function AHHubLib:CreateWindow()
                 Btn.TextColor3 = isDisabled and Theme.TextMuted or Theme.TextBright
             end
 
-            function ButtonController:SetLoading(state)
-                if state then
-                    Btn.Text = "⏳ Loading..."
-                    ButtonController:SetDisabled(true)
-                else
-                    Btn.Text = text
-                    ButtonController:SetDisabled(false)
-                end
-            end
-
             Btn.MouseButton1Click:Connect(function()
                 if not isDisabled then callback() end
             end)
@@ -661,61 +651,6 @@ function AHHubLib:CreateWindow()
             end)
         end
 
-        function Elements:AddKeybind(text, flag, defaultKey, callback)
-            callback = callback or function() end
-            local currentKey = defaultKey or Enum.KeyCode.F
-            AHHubLib.Flags[flag] = currentKey.Name
-            AHHubLib.Defaults[flag] = currentKey.Name
-
-            local Frame = Instance.new("Frame")
-            Frame.Size = UDim2.new(1, -10, 0, 32)
-            Frame.BackgroundColor3 = Theme.CardBg
-            Frame.BorderSizePixel = 1
-            Frame.BorderColor3 = Theme.CardBorder
-            Frame.Parent = PageView
-            Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 6)
-
-            local Title = Instance.new("TextLabel")
-            Title.Position = UDim2.new(0, 10, 0, 0)
-            Title.Size = UDim2.new(0.6, 0, 1, 0)
-            Title.BackgroundTransparency = 1
-            Title.Font = Enum.Font.GothamMedium
-            Title.Text = text
-            Title.TextColor3 = Theme.TextMain
-            Title.TextSize = 11
-            Title.TextXAlignment = Enum.TextXAlignment.Left
-            Title.Parent = Frame
-
-            local BindBtn = Instance.new("TextButton")
-            BindBtn.Position = UDim2.new(1, -90, 0.5, -11)
-            BindBtn.Size = UDim2.new(0, 80, 0, 22)
-            BindBtn.BackgroundColor3 = Theme.Sidebar
-            BindBtn.Font = Enum.Font.GothamBold
-            BindBtn.Text = currentKey.Name
-            BindBtn.TextColor3 = Theme.OrangeAccent
-            BindBtn.TextSize = 10
-            BindBtn.Parent = Frame
-            Instance.new("UICorner", BindBtn).CornerRadius = UDim.new(0, 4)
-
-            local listening = false
-            BindBtn.MouseButton1Click:Connect(function()
-                listening = true
-                BindBtn.Text = "Press Key..."
-            end)
-
-            UserInputService.InputBegan:Connect(function(input)
-                if listening and input.UserInputType == Enum.UserInputType.Keyboard then
-                    listening = false
-                    currentKey = input.KeyCode
-                    BindBtn.Text = currentKey.Name
-                    AHHubLib.Flags[flag] = currentKey.Name
-                    callback(currentKey)
-                end
-            end)
-
-            table.insert(Controller.RegisteredKeybinds, {Key = currentKey, Callback = function() callback(currentKey) end})
-        end
-
         function Elements:AddColorPicker(text, flag, defaultColor, callback)
             callback = callback or function() end
             defaultColor = defaultColor or Color3.fromRGB(255, 255, 255)
@@ -820,17 +755,6 @@ function AHHubLib:CreateWindow()
             end)
         end
 
-        function Elements:AddResetDefaultsButton()
-            Elements:AddButton("⚠️ Reset Settings to Default", "Resets all library flags back to original values", function()
-                ShowConfirmation("Reset Settings?", "Are you sure you want to revert all values back to default?", function()
-                    for flag, val in pairs(AHHubLib.Defaults) do
-                        AHHubLib.Flags[flag] = val
-                    end
-                    AHHubLib:Notify("Settings Reset", "All values have been restored to defaults.", 3)
-                end)
-            end)
-        end
-
         return Elements
     end
 
@@ -882,22 +806,17 @@ function AHHubLib:CreateWindow()
         local TabObject = CreateElementBuilder(MainTabFrame)
 
         -- =========================================================
-        -- NATIVE ESP RENDERER API EXTENSION
+        -- ADVANCED NATIVE ESP RENDERER API ENGINE (v1.5.8)
         -- =========================================================
         function TabObject:AddESPRenderer()
             local ESPManager = {
-                TrackedPlayers = {},
                 ActiveDrawings = {}
             }
 
             local function createDrawing(type, properties)
-                local success, obj = pcall(function()
-                    return Drawing.new(type)
-                end)
+                local success, obj = pcall(function() return Drawing.new(type) end)
                 if success and obj then
-                    for prop, val in pairs(properties) do
-                        obj[prop] = val
-                    end
+                    for prop, val in pairs(properties) do obj[prop] = val end
                     return obj
                 end
                 return nil
@@ -913,7 +832,8 @@ function AHHubLib:CreateWindow()
                     HealthBar = createDrawing("Line", {Thickness = 2, Visible = false}),
                     HealthBarOutline = createDrawing("Line", {Thickness = 4, Visible = false, Color = Color3.new(0,0,0)}),
                     Tracer = createDrawing("Line", {Thickness = 1, Visible = false}),
-                    Direction = createDrawing("Line", {Thickness = 1, Visible = false})
+                    Direction = createDrawing("Line", {Thickness = 1, Visible = false}),
+                    Marker = createDrawing("Square", {Size = Vector2.new(4, 4), Filled = true, Visible = false})
                 }
 
                 self.ActiveDrawings[player] = {
@@ -924,14 +844,19 @@ function AHHubLib:CreateWindow()
                         Armor = false,
                         Weapon = false,
                         Distance = true,
+                        Team = false,
                         Box = true,
+                        Outline = true,
                         Glow = false,
                         Tracer = false,
                         Direction = true,
                         Marker = false,
                         ThroughWalls = true,
                         Color = Color3.fromRGB(255, 50, 50),
-                        MaxDistance = 500
+                        MaxDistance = 500,
+                        NameSize = 13,
+                        MarkerSize = 4,
+                        Opacity = 1
                     }
                 }
             end
@@ -939,49 +864,33 @@ function AHHubLib:CreateWindow()
             function ESPManager:RemovePlayer(player)
                 if self.ActiveDrawings[player] then
                     for _, drawing in pairs(self.ActiveDrawings[player].Drawings) do
-                        if drawing then
-                            pcall(function() drawing:Remove() end)
-                        end
+                        if drawing then pcall(function() drawing:Remove() end) end
                     end
                     self.ActiveDrawings[player] = nil
                 end
             end
 
             function ESPManager:UpdatePlayer(player, data)
-                if not self.ActiveDrawings[player] then
-                    self:AddPlayer(player)
-                end
+                if not self.ActiveDrawings[player] then self:AddPlayer(player) end
                 local entry = self.ActiveDrawings[player]
                 if entry and data then
-                    for k, v in pairs(data) do
-                        entry.Data[k] = v
-                    end
+                    for k, v in pairs(data) do entry.Data[k] = v end
                 end
             end
 
             function ESPManager:Clear()
-                for player, _ in pairs(self.ActiveDrawings) do
-                    self:RemovePlayer(player)
-                end
+                for player, _ in pairs(self.ActiveDrawings) do self:RemovePlayer(player) end
                 self.ActiveDrawings = {}
             end
 
-            -- Automatically hook existing and joining players
             for _, p in ipairs(Players:GetPlayers()) do
-                if p ~= LocalPlayer then
-                    ESPManager:AddPlayer(p)
-                end
+                if p ~= LocalPlayer then ESPManager:AddPlayer(p) end
             end
             Players.PlayerAdded:Connect(function(p)
-                if p ~= LocalPlayer then
-                    ESPManager:AddPlayer(p)
-                end
+                if p ~= LocalPlayer then ESPManager:AddPlayer(p) end
             end)
-            Players.PlayerRemoving:Connect(function(p)
-                ESPManager:RemovePlayer(p)
-            end)
+            Players.PlayerRemoving:Connect(function(p) ESPManager:RemovePlayer(p) end)
 
-            -- Main Render Loop
             RunService.RenderStepped:Connect(function()
                 for player, record in pairs(ESPManager.ActiveDrawings) do
                     local character = player.Character
@@ -995,7 +904,7 @@ function AHHubLib:CreateWindow()
                     if character and rootPart and humanoid and humanoid.Health > 0 then
                         local _, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
                         local dist = (Camera.CFrame.Position - rootPart.Position).Magnitude
-                        if onScreen and dist <= (cfg.MaxDistance or 500) then
+                        if (onScreen or cfg.ThroughWalls) and dist <= (cfg.MaxDistance or 500) then
                             shouldRender = true
                         end
                     end
@@ -1006,39 +915,54 @@ function AHHubLib:CreateWindow()
                         local cf, size = character:GetBoundingBox()
                         local screenPos, onScreen = Camera:WorldToViewportPoint(cf.Position)
                         
-                        -- Simple viewport box scaling estimation
                         local scaleFactor = 1 / (screenPos.Z * math.tan(math.rad(Camera.FieldOfView / 2)) * 2) * 1000
                         local w = math.clamp(size.X * scaleFactor, 15, 300)
                         local h = math.clamp(size.Y * scaleFactor, 20, 500)
                         local x = screenPos.X - w / 2
                         local y = screenPos.Y - h / 2
 
-                        -- Box Rendering
+                        -- Box Rendering & Outline
                         if cfg.Box then
-                            drawings.BoxOutline.Visible = true
-                            drawings.BoxOutline.Position = Vector2.new(x, y)
-                            drawings.BoxOutline.Size = Vector2.new(w, h)
+                            if cfg.Outline then
+                                drawings.BoxOutline.Visible = true
+                                drawings.BoxOutline.Position = Vector2.new(x, y)
+                                drawings.BoxOutline.Size = Vector2.new(w, h)
+                                drawings.BoxOutline.Transparency = cfg.Opacity or 1
+                            else
+                                drawings.BoxOutline.Visible = false
+                            end
 
                             drawings.Box.Visible = true
                             drawings.Box.Position = Vector2.new(x, y)
                             drawings.Box.Size = Vector2.new(w, h)
                             drawings.Box.Color = cfg.Color
+                            drawings.Box.Transparency = cfg.Opacity or 1
                         else
                             drawings.Box.Visible = false
                             drawings.BoxOutline.Visible = false
                         end
 
-                        -- Name / Distance Text
+                        -- Name, Distance, Armor, Weapon Display
                         if cfg.Name then
                             drawings.Name.Visible = true
-                            drawings.Name.Position = Vector2.new(screenPos.X, y - 18)
+                            drawings.Name.Position = Vector2.new(screenPos.X, y - (cfg.NameSize or 13) - 4)
+                            drawings.Name.Size = cfg.NameSize or 13
+                            
                             local textString = player.Name
+                            if cfg.Team and player.Team then
+                                textString = "[" .. player.Team.Name .. "] " .. textString
+                            end
                             if cfg.Distance then
                                 local dist = math.floor((Camera.CFrame.Position - rootPart.Position).Magnitude)
                                 textString = textString .. " [" .. dist .. "m]"
                             end
+                            if cfg.Weapon and character:FindFirstChildOfClass("Tool") then
+                                textString = textString .. " (" .. character:FindFirstChildOfClass("Tool").Name .. ")"
+                            end
+                            
                             drawings.Name.Text = textString
                             drawings.Name.Color = cfg.Color
+                            drawings.Name.Transparency = cfg.Opacity or 1
                         else
                             drawings.Name.Visible = false
                         end
@@ -1051,27 +975,30 @@ function AHHubLib:CreateWindow()
                             drawings.HealthBarOutline.Visible = true
                             drawings.HealthBarOutline.From = Vector2.new(x - 6, y + h)
                             drawings.HealthBarOutline.To = Vector2.new(x - 6, y)
+                            drawings.HealthBarOutline.Transparency = cfg.Opacity or 1
 
                             drawings.HealthBar.Visible = true
                             drawings.HealthBar.From = Vector2.new(x - 6, y + h)
                             drawings.HealthBar.To = Vector2.new(x - 6, y + (h - barHeight))
                             drawings.HealthBar.Color = Color3.fromRGB(255 - (healthPct * 255), healthPct * 255, 0)
+                            drawings.HealthBar.Transparency = cfg.Opacity or 1
                         else
                             drawings.HealthBar.Visible = false
                             drawings.HealthBarOutline.Visible = false
                         end
 
-                        -- Tracer
+                        -- Tracers
                         if cfg.Tracer then
                             drawings.Tracer.Visible = true
                             drawings.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
                             drawings.Tracer.To = Vector2.new(screenPos.X, y + h)
                             drawings.Tracer.Color = cfg.Color
+                            drawings.Tracer.Transparency = cfg.Opacity or 1
                         else
                             drawings.Tracer.Visible = false
                         end
 
-                        -- Direction Line
+                        -- Look Direction Line
                         if cfg.Direction and rootPart then
                             local lookVector = rootPart.CFrame.LookVector
                             local targetPoint = rootPart.Position + (lookVector * 5)
@@ -1081,11 +1008,29 @@ function AHHubLib:CreateWindow()
                                 drawings.Direction.From = Vector2.new(screenPos.X, screenPos.Y)
                                 drawings.Direction.To = Vector2.new(tScreenPos.X, tScreenPos.Y)
                                 drawings.Direction.Color = cfg.Color
+                                drawings.Direction.Transparency = cfg.Opacity or 1
                             else
                                 drawings.Direction.Visible = false
                             end
                         else
                             drawings.Direction.Visible = false
+                        end
+
+                        -- Marker
+                        if cfg.Marker and character:FindFirstChild("Head") then
+                            local headPos, headOnScreen = Camera:WorldToViewportPoint(character.Head.Position)
+                            if headOnScreen then
+                                drawings.Marker.Visible = true
+                                local mSize = cfg.MarkerSize or 4
+                                drawings.Marker.Position = Vector2.new(headPos.X - mSize/2, headPos.Y - mSize/2)
+                                drawings.Marker.Size = Vector2.new(mSize, mSize)
+                                drawings.Marker.Color = cfg.Color
+                                drawings.Marker.Transparency = cfg.Opacity or 1
+                            else
+                                drawings.Marker.Visible = false
+                            end
+                        else
+                            drawings.Marker.Visible = false
                         end
                     end
                 end
