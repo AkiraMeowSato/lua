@@ -1,9 +1,9 @@
 -- =========================================================================
--- A&H HUB v1.6.6 - STABLE RELEASE (FIXED ESP & PROCEDURAL COSMETICS)
+-- A&H HUB v1.6.7 - STABLE RELEASE (DRAG, ESP TAB, & REAL ASSET ID FIXED)
 -- =========================================================================
 
 local AHHubLib = {
-    Version = "1.6.6",
+    Version = "1.6.7",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -14,6 +14,7 @@ local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
+local InsertService = game:GetService("InsertService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
@@ -61,7 +62,9 @@ local function MakeDraggable(dragHandle, frame)
     UserInputService.InputChanged:Connect(function(input)
         if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             local delta = input.Position - dragStart
-            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            Tween(frame, TweenInfo.new(0.05, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+                Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            })
         end
     end)
     UserInputService.InputEnded:Connect(function(input)
@@ -621,15 +624,15 @@ function AHHubLib:CreateWindow()
             return self:AddToggle("Enable " .. (espName or "ESP"), "ESP_" .. (espName or "Renderer"), false, "Toggle native drawing ESP", callback)
         end
 
-        -- Safe procedural accessory setup avoiding external GetObjects web limits
-        function Elements:AddCosmeticAccessory(assetName)
+        -- Equips the exact requested Asset ID 12283471793 (Chinese Traditional Bamboo Hat)
+        function Elements:AddCosmeticAccessory(assetName, assetId)
             local Btn = Instance.new("TextButton")
             Btn.Size = UDim2.new(1, -10, 0, 32)
             Btn.BackgroundColor3 = Theme.CardBg
             Btn.BorderSizePixel = 1
             Btn.BorderColor3 = Theme.CardBorder
             Btn.Font = Enum.Font.GothamMedium
-            Btn.Text = "  ☕ Equip Cosmetic: " .. assetName
+            Btn.Text = "  ☕ Equip: " .. assetName
             Btn.TextColor3 = Theme.TextBright
             Btn.TextSize = 11
             Btn.AutoButtonColor = false
@@ -646,23 +649,44 @@ function AHHubLib:CreateWindow()
                 local existing = char:FindFirstChild("AHHub_Cosmetic_" .. assetName)
                 if existing then existing:Destroy() end
 
-                local hatModel = Instance.new("Model")
-                hatModel.Name = "AHHub_Cosmetic_" .. assetName
+                task.spawn(function()
+                    local success, loadedObj = pcall(function()
+                        return InsertService:LoadAsset(assetId or 12283471793)
+                    end)
 
-                local handle = Instance.new("Part")
-                handle.Name = "Handle"
-                handle.Size = Vector3.new(1.2, 0.4, 1.2)
-                handle.CFrame = char.Head.CFrame + Vector3.new(0, 1, 0)
-                handle.BrickColor = BrickColor.new("Black")
-                handle.Parent = hatModel
+                    if success and loadedObj then
+                        loadedObj.Name = "AHHub_Cosmetic_" .. assetName
+                        local hatPart = loadedObj:FindFirstChildWhichIsA("BasePart", true)
+                        if hatPart then
+                            local weld = Instance.new("WeldConstraint")
+                            weld.Part0 = hatPart
+                            weld.Part1 = char.Head
+                            weld.Parent = hatPart
+                            loadedObj.Parent = char
+                            AHHubLib:Notify("Cosmetics", assetName .. " equipped successfully!", 2)
+                            return
+                        end
+                    end
 
-                local weld = Instance.new("WeldConstraint")
-                weld.Part0 = handle
-                weld.Part1 = char.Head
-                weld.Parent = handle
+                    -- Fallback procedural shape if asset loading restriction blocks runtime catalog fetching
+                    local hatModel = Instance.new("Model")
+                    hatModel.Name = "AHHub_Cosmetic_" .. assetName
 
-                hatModel.Parent = char
-                AHHubLib:Notify("Cosmetics", assetName .. " equipped successfully!", 2)
+                    local handle = Instance.new("Part")
+                    handle.Name = "Handle"
+                    handle.Size = Vector3.new(1.8, 0.4, 1.8)
+                    handle.CFrame = char.Head.CFrame + Vector3.new(0, 1.1, 0)
+                    handle.BrickColor = BrickColor.new("Dark orange")
+                    handle.Parent = hatModel
+
+                    local weld = Instance.new("WeldConstraint")
+                    weld.Part0 = handle
+                    weld.Part1 = char.Head
+                    weld.Parent = handle
+
+                    hatModel.Parent = char
+                    AHHubLib:Notify("Cosmetics", assetName .. " equipped (Fallback Mesh Style)!", 2)
+                end)
             end)
         end
 
