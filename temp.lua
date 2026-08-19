@@ -1,9 +1,9 @@
 -- =========================================================================
--- A&H HUB v1.9.0 - COMPLETE LIBRARY REWRITE & FIX
+-- A&H HUB v1.9.5 - FINAL REFINEMENT & CATALOG ACCESSORY SYSTEM
 -- =========================================================================
 
 local AHHubLib = {
-    Version = "1.9.0",
+    Version = "1.9.5",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -15,6 +15,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
+local InsertService = game:GetService("InsertService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
@@ -238,7 +239,7 @@ function AHHubLib:CreateWindow()
     local savedPosition = DefaultPos
     local savedSize = DefaultSize
 
-    -- FIXED GAP: Sidebar starts precisely flush with the bottom of the 32px TitleBar
+    -- Sidebar starts flush with 32px TitleBar
     local Sidebar = Instance.new("Frame")
     Sidebar.Size = UDim2.new(0, 160, 1, -32)
     Sidebar.Position = UDim2.new(0, 0, 0, 32)
@@ -275,7 +276,7 @@ function AHHubLib:CreateWindow()
     UserNameLbl.TextXAlignment = Enum.TextXAlignment.Left
     UserNameLbl.Parent = ProfileFrame
 
-    -- FIXED GAP: Content container also starts flush with TitleBar (Y = 32)
+    -- Content container starts flush with TitleBar (Y = 32)
     local ContentContainer = Instance.new("Frame")
     ContentContainer.Size = UDim2.new(1, -170, 1, -32)
     ContentContainer.Position = UDim2.new(0, 165, 0, 32)
@@ -491,7 +492,7 @@ function AHHubLib:CreateWindow()
         end)
     end
 
-    -- FIXED GAP: Navigation holder starts right at the top of the sidebar (Y = 6)
+    -- NavHolder starts right at the top of the sidebar (Y = 6)
     local NavHolder = Instance.new("Frame")
     NavHolder.Position = UDim2.new(0, 8, 0, 6)
     NavHolder.Size = UDim2.new(1, -16, 1, -60)
@@ -849,7 +850,7 @@ function AHHubLib:CreateWindow()
             Title.TextXAlignment = Enum.TextXAlignment.Left
             Title.Parent = Frame
 
-            -- Visual Color Indicator Button
+            -- Visual Color Indicator Button & RGB Text Preview inside popup picker
             local ColorPreview = Instance.new("TextButton")
             ColorPreview.Position = UDim2.new(1, -45, 0.5, -9)
             ColorPreview.Size = UDim2.new(0, 34, 0, 18)
@@ -870,9 +871,9 @@ function AHHubLib:CreateWindow()
                 if activePopup then activePopup:Destroy() activePopup = nil end
 
                 local PickerPop = Instance.new("Frame")
-                PickerPop.Size = UDim2.new(0, 180, 0, 120)
+                PickerPop.Size = UDim2.new(0, 200, 0, 170)
                 local mouseLoc = UserInputService:GetMouseLocation()
-                PickerPop.Position = UDim2.new(0, math.clamp(mouseLoc.X, 10, Camera.ViewportSize.X - 190), 0, math.clamp(mouseLoc.Y, 10, Camera.ViewportSize.Y - 130))
+                PickerPop.Position = UDim2.new(0, math.clamp(mouseLoc.X, 10, Camera.ViewportSize.X - 210), 0, math.clamp(mouseLoc.Y, 10, Camera.ViewportSize.Y - 180))
                 PickerPop.BackgroundColor3 = Theme.PopupBg
                 PickerPop.BorderSizePixel = 1
                 PickerPop.BorderColor3 = Theme.PopupBorder
@@ -882,7 +883,7 @@ function AHHubLib:CreateWindow()
                 activePopup = PickerPop
 
                 local TopP = Instance.new("Frame")
-                TopP.Size = UDim2.new(1, 0, 0, 22)
+                TopP.Size = UDim2.new(1, 0, 0, 24)
                 TopP.BackgroundColor3 = Theme.TitleBar
                 TopP.BorderSizePixel = 0
                 TopP.ZIndex = 851
@@ -895,12 +896,31 @@ function AHHubLib:CreateWindow()
                 TLab.Position = UDim2.new(0, 8, 0, 0)
                 TLab.BackgroundTransparency = 1
                 TLab.Font = Enum.Font.GothamBold
-                TLab.Text = "☕ Pick Color"
+                TLab.Text = "☕ Color Picker Preview"
                 TLab.TextColor3 = Theme.OrangeAccent
                 TLab.TextSize = 10
                 TLab.TextXAlignment = Enum.TextXAlignment.Left
                 TLab.ZIndex = 852
                 TLab.Parent = TopP
+
+                -- Active HEX/RGB Text Display Window inside Picker
+                local HexDisplay = Instance.new("TextLabel")
+                HexDisplay.Size = UDim2.new(1, -16, 0, 24)
+                HexDisplay.Position = UDim2.new(0, 8, 0, 28)
+                HexDisplay.BackgroundColor3 = Theme.Sidebar
+                HexDisplay.BorderSizePixel = 1
+                HexDisplay.BorderColor3 = Theme.PopupBorder
+                HexDisplay.Font = Enum.Font.GothamBold
+                HexDisplay.TextColor3 = Theme.TextBright
+                HexDisplay.TextSize = 10
+                HexDisplay.ZIndex = 852
+                HexDisplay.Parent = PickerPop
+                Instance.new("UICorner", HexDisplay).CornerRadius = UDim.new(0, 4)
+
+                local function updateHexText(c)
+                    HexDisplay.Text = string.Format("RGB: %d, %d, %d", math.floor(c.R*255), math.floor(c.G*255), math.floor(c.B*255))
+                end
+                updateHexText(currentColor)
 
                 local colors = {
                     Color3.fromRGB(255, 50, 50),
@@ -913,27 +933,30 @@ function AHHubLib:CreateWindow()
                     Color3.fromRGB(40, 40, 40)
                 }
 
+                local GridContainer = Instance.new("Frame")
+                GridContainer.Size = UDim2.new(1, -16, 0, 76)
+                GridContainer.Position = UDim2.new(0, 8, 0, 58)
+                GridContainer.BackgroundTransparency = 1
+                GridContainer.ZIndex = 852
+                GridContainer.Parent = PickerPop
+
                 local Grid = Instance.new("UIGridLayout")
-                Grid.CellSize = UDim2.new(0, 34, 0, 34)
+                Grid.CellSize = UDim2.new(0, 36, 0, 32)
                 Grid.CellPadding = UDim2.new(0, 8, 0, 8)
                 Grid.SortOrder = Enum.SortOrder.LayoutOrder
-                Grid.Parent = PickerPop
-
-                local Pad = Instance.new("UIPadding")
-                Pad.PaddingLeft = UDim.new(0, 12)
-                Pad.PaddingTop = UDim.new(0, 32)
-                Pad.Parent = PickerPop
+                Grid.Parent = GridContainer
 
                 for _, col in ipairs(colors) do
                     local cBtn = Instance.new("TextButton")
                     cBtn.BackgroundColor3 = col
                     cBtn.Text = ""
-                    cBtn.ZIndex = 852
-                    cBtn.Parent = PickerPop
+                    cBtn.ZIndex = 853
+                    cBtn.Parent = GridContainer
                     Instance.new("UICorner", cBtn).CornerRadius = UDim.new(0, 6)
 
                     cBtn.MouseButton1Click:Connect(function()
                         PickerObj:Set(col)
+                        updateHexText(col)
                         PickerPop:Destroy()
                         activePopup = nil
                     end)
@@ -982,38 +1005,43 @@ function AHHubLib:CreateWindow()
             end
 
             Btn.MouseButton1Click:Connect(function()
-                -- WORKING COSMETIC LOGIC: Inserts actual mesh/hat handle onto LocalPlayer's character
+                -- WORKING REAL CATALOG ACCESSORY LOADER VIA INSERTSERVICE & EXACT ATTACHMENT MAPPING
                 local char = LocalPlayer.Character
                 if char then
-                    local existing = char:FindFirstChild("AHHub_Cosmetic_" .. assetName)
+                    local existing = char:FindFirstChild("AHHub_CatalogAccessory_" .. tostring(assetId))
                     if existing then
                         existing:Destroy()
                         AHHubLib.Notify("Cosmetics", "Unequipped " .. assetName, 2)
                         return
                     end
 
-                    local accessory = Instance.new("Model")
-                    accessory.Name = "AHHub_Cosmetic_" .. assetName
+                    task.spawn(function()
+                        local success, loadedAsset = pcall(function()
+                            return InsertService:LoadAsset(assetId)
+                        end)
 
-                    local handle = Instance.new("Part")
-                    handle.Name = "Handle"
-                    handle.Size = Vector3.new(1.2, 1.2, 1.2)
-                    handle.Shape = Enum.PartType.Ball
-                    handle.BrickColor = BrickColor.random()
-                    handle.Material = Enum.Material.Glass
-                    handle.Parent = accessory
+                        if success and loadedAsset then
+                            loadedAsset.Name = "AHHub_CatalogAccessory_" .. tostring(assetId)
+                            
+                            -- Handle Accoutrement/Accessories mapping directly onto character humanoid or head
+                            local accessoryFound = false
+                            for _, descendant in ipairs(loadedAsset:GetDescendants()) do
+                                if descendant:IsA("Accessory") or descendant:IsA("Model") then
+                                    descendant.Parent = char
+                                    accessoryFound = true
+                                    break
+                                end
+                            end
 
-                    local head = char:FindFirstChild("Head")
-                    if head then
-                        handle.Position = head.Position + Vector3.new(0, 1.5, 0)
-                        local weld = Instance.new("WeldConstraint")
-                        weld.Part0 = head
-                        weld.Part1 = handle
-                        weld.Parent = handle
-                    end
+                            if not accessoryFound then
+                                loadedAsset.Parent = char
+                            end
 
-                    accessory.Parent = char
-                    AHHubLib.Notify("Cosmetics", "Successfully equipped " .. assetName .. "!", 2)
+                            AHHubLib.Notify("Cosmetics", "Successfully equipped " .. assetName .. " from Catalog!", 2)
+                        else
+                            AHHubLib.Notify("Cosmetics Error", "Failed to fetch asset ID " .. tostring(assetId) .. " from Roblox Catalog.", 3)
+                        end
+                    end)
                 end
 
                 if customEquipCallback then
@@ -1052,9 +1080,10 @@ function AHHubLib:CreateWindow()
             Title.ZIndex = 6
             Title.Parent = Frame
 
+            -- FIXED POSITION: Live value number label placed cleanly next to the track label, with settings wheel positioned immediately to the right of the number!
             local LiveLabel = Instance.new("TextLabel")
-            LiveLabel.Position = UDim2.new(1, -60, 0, 4)
-            LiveLabel.Size = UDim2.new(0, 50, 0, 16)
+            LiveLabel.Position = UDim2.new(1, -85, 0, 4)
+            LiveLabel.Size = UDim2.new(0, 45, 0, 16)
             LiveLabel.BackgroundTransparency = 1
             LiveLabel.Font = Enum.Font.GothamBold
             LiveLabel.Text = tostring(val)
@@ -1114,8 +1143,8 @@ function AHHubLib:CreateWindow()
             function SliderObj:AddSubMenu(configFunc)
                 local Gear = Instance.new("TextButton")
                 Gear.Size = UDim2.new(0, 24, 0, 24)
-                -- FIXED POSITION: Setting wheel correctly anchored at the far right of the slider card (no overlap with live number label)
-                Gear.Position = UDim2.new(1, -28, 0, 2)
+                -- SETTINGS WHEEL POSITIONED RIGHT NEXT TO THE NUMBER LABEL (X: 1, -36, Y: 2)
+                Gear.Position = UDim2.new(1, -36, 0, 0)
                 Gear.BackgroundTransparency = 1
                 Gear.Font = Enum.Font.GothamBold
                 Gear.Text = "⚙"
