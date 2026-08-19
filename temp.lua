@@ -1,9 +1,9 @@
 -- =========================================================================
--- A&H HUB v1.9.8 - ULTIMATE COMPREHENSIVE TEST & LIBRARY SCRIPT
+-- A&H HUB v1.9.9 - ULTIMATE COMPREHENSIVE TEST & LIBRARY SCRIPT
 -- =========================================================================
 
 local AHHubLib = {
-    Version = "1.9.8",
+    Version = "1.9.9",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -858,6 +858,25 @@ function AHHubLib:CreateWindow()
             ValLbl.TextXAlignment = Enum.TextXAlignment.Right
             ValLbl.Parent = Frame
 
+            local GearBtn = Instance.new("TextButton")
+            GearBtn.Size = UDim2.new(0, 24, 0, 24)
+            GearBtn.Position = UDim2.new(1, -28, 0, 0)
+            GearBtn.BackgroundTransparency = 1
+            GearBtn.Font = Enum.Font.GothamBold
+            GearBtn.Text = "⚙"
+            GearBtn.TextColor3 = Theme.TextMuted
+            GearBtn.TextSize = 12
+            GearBtn.ZIndex = 805
+            GearBtn.Parent = Frame
+
+            local function updateGearPosition()
+                local textWidth = ValLbl.TextBounds.X
+                GearBtn.Position = UDim2.new(1, -textWidth - 36, 0, 0)
+            end
+
+            ValLbl:GetPropertyChangedSignal("Text"):Connect(updateGearPosition)
+            task.spawn(updateGearPosition)
+
             local SliderBar = Instance.new("TextButton")
             SliderBar.Position = UDim2.new(0, 10, 0, 28)
             SliderBar.Size = UDim2.new(1, -20, 0, 8)
@@ -904,17 +923,7 @@ function AHHubLib:CreateWindow()
 
             local Obj = {}
             function Obj:AddSubMenu(configFunc)
-                local Gear = Instance.new("TextButton")
-                Gear.Size = UDim2.new(0, 24, 0, 24)
-                Gear.Position = UDim2.new(1, -112, 0, 2)
-                Gear.BackgroundTransparency = 1
-                Gear.Font = Enum.Font.GothamBold
-                Gear.Text = "⚙"
-                Gear.TextColor3 = Theme.TextMuted
-                Gear.TextSize = 12
-                Gear.ZIndex = 805
-                Gear.Parent = Frame
-                Gear.MouseButton1Click:Connect(function()
+                GearBtn.MouseButton1Click:Connect(function()
                     task.spawn(function()
                         task.wait()
                         OpenFloatingPopup(Frame, configFunc)
@@ -961,14 +970,13 @@ function AHHubLib:CreateWindow()
             Preview.Parent = Frame
             Instance.new("UICorner", Preview).CornerRadius = UDim.new(0, 4)
 
-            -- Real interactive Color Picker Popup Window
             Preview.MouseButton1Click:Connect(function()
                 if activePopup then activePopup:Destroy() activePopup = nil end
 
                 local PickerPopup = Instance.new("Frame")
                 PickerPopup.Size = UDim2.new(0, 0, 0, 0)
                 local mouseLoc = UserInputService:GetMouseLocation()
-                PickerPopup.Position = UDim2.new(0, math.clamp(mouseLoc.X - 90, 10, Camera.ViewportSize.X - 200), 0, math.clamp(mouseLoc.Y - 10, 10, Camera.ViewportSize.Y - 210))
+                PickerPopup.Position = UDim2.new(0, math.clamp(mouseLoc.X - 110, 10, Camera.ViewportSize.X - 220), 0, math.clamp(mouseLoc.Y - 10, 10, Camera.ViewportSize.Y - 220))
                 PickerPopup.BackgroundColor3 = Theme.PopupBg
                 PickerPopup.BorderSizePixel = 1
                 PickerPopup.BorderColor3 = Theme.PopupBorder
@@ -976,7 +984,7 @@ function AHHubLib:CreateWindow()
                 PickerPopup.Parent = ScreenGui
                 Instance.new("UICorner", PickerPopup).CornerRadius = UDim.new(0, 8)
 
-                Tween(PickerPopup, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 180, 0, 200)})
+                Tween(PickerPopup, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 200, 0, 210)})
                 activePopup = PickerPopup
 
                 local TopBar = Instance.new("Frame")
@@ -993,55 +1001,97 @@ function AHHubLib:CreateWindow()
                 TitleTxt.Position = UDim2.new(0, 8, 0, 0)
                 TitleTxt.BackgroundTransparency = 1
                 TitleTxt.Font = Enum.Font.GothamBold
-                TitleTxt.Text = "🎨 Color Wheel"
+                TitleTxt.Text = "🎨 True Color Wheel"
                 TitleTxt.TextColor3 = Theme.OrangeAccent
                 TitleTxt.TextSize = 10
                 TitleTxt.TextXAlignment = Enum.TextXAlignment.Left
                 TitleTxt.ZIndex = 852
                 TitleTxt.Parent = TopBar
 
-                -- Wheel container utilizing a series of slices/buttons arranged in a circle or a smooth gradient palette field
-                -- To provide an actual intuitive color field/wheel experience inside Roblox UI bounds:
                 local WheelContainer = Instance.new("Frame")
-                WheelContainer.Size = UDim2.new(0, 130, 0, 130)
-                WheelContainer.Position = UDim2.new(0.5, -65, 0, 32)
-                WheelContainer.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-                WheelContainer.BorderSizePixel = 1
-                WheelContainer.BorderColor3 = Theme.PopupBorder
+                WheelContainer.Size = UDim2.new(0, 140, 0, 140)
+                WheelContainer.Position = UDim2.new(0.5, -70, 0, 30)
+                WheelContainer.BackgroundTransparency = 1
                 WheelContainer.ZIndex = 851
                 WheelContainer.Parent = PickerPopup
-                Instance.new("UICorner", WheelContainer).CornerRadius = UDim.new(1, 0)
 
-                -- Create a precise gradient field picker for Saturation/Hue/Value
-                local SatValBox = Instance.new("TextButton")
-                SatValBox.Size = UDim2.new(0, 100, 0, 100)
-                SatValBox.Position = UDim2.new(0.5, -50, 0.5, -50)
-                SatValBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-                SatValBox.AutoButtonColor = false
-                SatValBox.Text = ""
-                SatValBox.ZIndex = 852
-                SatValBox.Parent = WheelContainer
-                Instance.new("UICorner", SatValBox).CornerRadius = UDim.new(0, 4)
+                local CenterIndicator = Instance.new("Frame")
+                CenterIndicator.Size = UDim2.new(0, 10, 0, 10)
+                CenterIndicator.AnchorPoint = Vector2.new(0.5, 0.5)
+                CenterIndicator.BackgroundColor3 = Color3.new(1, 1, 1)
+                CenterIndicator.BorderSizePixel = 1
+                CenterIndicator.BorderColor3 = Color3.new(0, 0, 0)
+                CenterIndicator.ZIndex = 855
+                CenterIndicator.Parent = WheelContainer
+                Instance.new("UICorner", CenterIndicator).CornerRadius = UDim.new(1, 0)
 
-                -- Background gradients for SatValBox (Hue representation ring or matrix)
                 local h, s, v = currentColor:ToHSV()
 
-                local UIGradientH = Instance.new("UIGradient")
-                UIGradientH.Color = ColorSequence.new({
-                    ColorSequenceKeypoint.new(0.00, Color3.fromHSV(0, 1, 1)),
-                    ColorSequenceKeypoint.new(0.17, Color3.fromHSV(1/6, 1, 1)),
-                    ColorSequenceKeypoint.new(0.33, Color3.fromHSV(2/6, 1, 1)),
-                    ColorSequenceKeypoint.new(0.50, Color3.fromHSV(3/6, 1, 1)),
-                    ColorSequenceKeypoint.new(0.67, Color3.fromHSV(4/6, 1, 1)),
-                    ColorSequenceKeypoint.new(0.83, Color3.fromHSV(5/6, 1, 1)),
-                    ColorSequenceKeypoint.new(1.00, Color3.fromHSV(1, 1, 1))
-                })
-                UIGradientH.Parent = SatValBox
+                local slices = 36
+                for i = 1, slices do
+                    local angle1 = (i - 1) / slices * math.pi * 2
+                    local angle2 = i / slices * math.pi * 2
+                    
+                    local sliceBtn = Instance.new("TextButton")
+                    sliceBtn.Size = UDim2.new(1, 0, 1, 0)
+                    sliceBtn.BackgroundTransparency = 1
+                    sliceBtn.AutoButtonColor = false
+                    sliceBtn.Text = ""
+                    sliceBtn.ZIndex = 852
+                    sliceBtn.Parent = WheelContainer
 
-                -- Brightness/Value slider below the wheel
+                    local sliceHue = (i - 1) / slices
+                    sliceBtn.BackgroundColor3 = Color3.fromHSV(sliceHue, 1, 1)
+
+                    sliceBtn.MouseButton1Down:Connect(function()
+                        h = sliceHue
+                        s = 1.0
+                        local updatePosFromHSV = function()
+                            local radius = s * 70
+                            local radAngle = h * math.pi * 2
+                            CenterIndicator.Position = UDim2.new(0.5, math.cos(radAngle) * radius, 0.5, math.sin(radAngle) * radius)
+                        end
+                        updatePosFromHSV()
+                        
+                        local conn
+                        conn = UserInputService.InputChanged:Connect(function(input)
+                            if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                                local relX = input.Position.X - WheelContainer.AbsolutePosition.X - 70
+                                local relY = input.Position.Y - WheelContainer.AbsolutePosition.Y - 70
+                                local dist = math.sqrt(relX*relX + relY*relY)
+                                s = math.clamp(dist / 70, 0, 1)
+                                h = (math.atan2(relY, relX) / (math.pi * 2)) % 1
+                                CenterIndicator.Position = UDim2.new(0.5, math.cos(h * math.pi * 2) * (s * 70), 0.5, math.sin(h * math.pi * 2) * (s * 70))
+                                
+                                currentColor = Color3.fromHSV(h, s, v)
+                                Preview.BackgroundColor3 = currentColor
+                                AHHubLib.Flags[flag] = currentColor
+                                callback(currentColor)
+                            end
+                        end)
+
+                        local releaseConn
+                        releaseConn = UserInputService.InputEnded:Connect(function(input)
+                            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                                if conn then conn:Disconnect() end
+                                if releaseConn then releaseConn:Disconnect() end
+                            end
+                        end)
+
+                        currentColor = Color3.fromHSV(h, s, v)
+                        Preview.BackgroundColor3 = currentColor
+                        AHHubLib.Flags[flag] = currentColor
+                        callback(currentColor)
+                    end)
+                end
+
+                local radAngleInit = h * math.pi * 2
+                local radiusInit = s * 70
+                CenterIndicator.Position = UDim2.new(0.5, math.cos(radAngleInit) * radiusInit, 0.5, math.sin(radAngleInit) * radiusInit)
+
                 local BrightnessBar = Instance.new("TextButton")
-                BrightnessBar.Size = UDim2.new(0, 130, 0, 14)
-                BrightnessBar.Position = UDim2.new(0.5, -65, 0, 170)
+                BrightnessBar.Size = UDim2.new(0, 160, 0, 14)
+                BrightnessBar.Position = UDim2.new(0.5, -80, 0, 180)
                 BrightnessBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
                 BrightnessBar.AutoButtonColor = false
                 BrightnessBar.Text = ""
@@ -1061,34 +1111,6 @@ function AHHubLib:CreateWindow()
                     callback(currentColor)
                 end
 
-                local pickingWheel = false
-                SatValBox.InputBegan:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                        pickingWheel = true
-                        local relX = math.clamp((input.Position.X - SatValBox.AbsolutePosition.X) / SatValBox.AbsoluteSize.X, 0, 1)
-                        local relY = math.clamp((input.Position.Y - SatValBox.AbsolutePosition.Y) / SatValBox.AbsoluteSize.Y, 0, 1)
-                        h = relX
-                        s = 1 - relY
-                        updateColorOutput()
-                    end
-                end)
-
-                UserInputService.InputChanged:Connect(function(input)
-                    if pickingWheel and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-                        local relX = math.clamp((input.Position.X - SatValBox.AbsolutePosition.X) / SatValBox.AbsoluteSize.X, 0, 1)
-                        local relY = math.clamp((input.Position.Y - SatValBox.AbsolutePosition.Y) / SatValBox.AbsoluteSize.Y, 0, 1)
-                        h = relX
-                        s = 1 - relY
-                        updateColorOutput()
-                    end
-                end)
-
-                UserInputService.InputEnded:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                        pickingWheel = false
-                    end
-                end)
-
                 local pickingBright = false
                 BrightnessBar.InputBegan:Connect(function(input)
                     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -1106,13 +1128,19 @@ function AHHubLib:CreateWindow()
                         updateColorOutput()
                     end
                 end)
+
+                UserInputService.InputEnded:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                        pickingBright = false
+                    end
+                end)
             end)
 
             return Elements
         end
 
         function Elements:AddCosmeticAccessory(name, id, callback)
-            return Elements:AddButton(name, "Catalog Asset ID: " .. tostring(id), callback)
+            return Elements:AddButton(name, "Catalog Asset ID: " + tostring(id), callback)
         end
 
         return Elements
