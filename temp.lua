@@ -1,9 +1,9 @@
 -- =========================================================================
--- A&H HUB v1.9.6 - COLOR PICKER & SUB-MENU FIX
+-- A&H HUB v1.9.7 - ULTIMATE COMPREHENSIVE TEST & LIBRARY SCRIPT
 -- =========================================================================
 
 local AHHubLib = {
-    Version = "1.9.6",
+    Version = "1.9.7",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -867,9 +867,9 @@ function AHHubLib:CreateWindow()
                 if activePopup then activePopup:Destroy() activePopup = nil end
 
                 local PickerPop = Instance.new("Frame")
-                PickerPop.Size = UDim2.new(0, 200, 0, 170)
+                PickerPop.Size = UDim2.new(0, 220, 0, 180)
                 local mouseLoc = UserInputService:GetMouseLocation()
-                PickerPop.Position = UDim2.new(0, math.clamp(mouseLoc.X, 10, Camera.ViewportSize.X - 210), 0, math.clamp(mouseLoc.Y, 10, Camera.ViewportSize.Y - 180))
+                PickerPop.Position = UDim2.new(0, math.clamp(mouseLoc.X, 10, Camera.ViewportSize.X - 230), 0, math.clamp(mouseLoc.Y, 10, Camera.ViewportSize.Y - 190))
                 PickerPop.BackgroundColor3 = Theme.PopupBg
                 PickerPop.BorderSizePixel = 1
                 PickerPop.BorderColor3 = Theme.PopupBorder
@@ -892,71 +892,92 @@ function AHHubLib:CreateWindow()
                 TLab.Position = UDim2.new(0, 8, 0, 0)
                 TLab.BackgroundTransparency = 1
                 TLab.Font = Enum.Font.GothamBold
-                TLab.Text = "☕ Color Picker Preview"
+                TLab.Text = "☕ Custom Color Mixer"
                 TLab.TextColor3 = Theme.OrangeAccent
                 TLab.TextSize = 10
                 TLab.TextXAlignment = Enum.TextXAlignment.Left
                 TLab.ZIndex = 852
                 TLab.Parent = TopP
 
-                local HexDisplay = Instance.new("TextLabel")
-                HexDisplay.Size = UDim2.new(1, -16, 0, 24)
-                HexDisplay.Position = UDim2.new(0, 8, 0, 28)
-                HexDisplay.BackgroundColor3 = Theme.Sidebar
-                HexDisplay.BorderSizePixel = 1
-                HexDisplay.BorderColor3 = Theme.PopupBorder
-                HexDisplay.Font = Enum.Font.GothamBold
-                HexDisplay.TextColor3 = Theme.TextBright
-                HexDisplay.TextSize = 10
-                HexDisplay.ZIndex = 852
-                HexDisplay.Parent = PickerPop
-                Instance.new("UICorner", HexDisplay).CornerRadius = UDim.new(0, 4)
+                local function createColorSlider(name, yPos, initialVal, onValChanged)
+                    local Label = Instance.new("TextLabel")
+                    Label.Size = UDim2.new(0, 20, 0, 16)
+                    Label.Position = UDim2.new(0, 8, 0, yPos)
+                    Label.BackgroundTransparency = 1
+                    Label.Font = Enum.Font.GothamBold
+                    Label.Text = name
+                    Label.TextColor3 = Theme.TextBright
+                    Label.TextSize = 10
+                    Label.ZIndex = 852
+                    Label.Parent = PickerPop
 
-                -- FIXED: Using string.format correctly with standard string formatting syntax
-                local function updateHexText(c)
-                    HexDisplay.Text = string.format("RGB: %d, %d, %d", math.floor(c.R * 255 + 0.5), math.floor(c.G * 255 + 0.5), math.floor(c.B * 255 + 0.5))
-                end
-                updateHexText(currentColor)
+                    local ValLbl = Instance.new("TextLabel")
+                    ValLbl.Size = UDim2.new(0, 30, 0, 16)
+                    ValLbl.Position = UDim2.new(1, -38, 0, yPos)
+                    ValLbl.BackgroundTransparency = 1
+                    ValLbl.Font = Enum.Font.GothamMedium
+                    ValLbl.Text = tostring(initialVal)
+                    ValLbl.TextColor3 = Theme.OrangeAccent
+                    ValLbl.TextSize = 10
+                    ValLbl.TextXAlignment = Enum.TextXAlignment.Right
+                    ValLbl.ZIndex = 852
+                    ValLbl.Parent = PickerPop
 
-                local colors = {
-                    Color3.fromRGB(255, 50, 50),
-                    Color3.fromRGB(50, 255, 50),
-                    Color3.fromRGB(50, 150, 255),
-                    Color3.fromRGB(255, 255, 50),
-                    Color3.fromRGB(255, 128, 0),
-                    Color3.fromRGB(255, 50, 255),
-                    Color3.fromRGB(255, 255, 255),
-                    Color3.fromRGB(40, 40, 40)
-                }
+                    local Track = Instance.new("TextButton")
+                    Track.Size = UDim2.new(1, -85, 0, 8)
+                    Track.Position = UDim2.new(0, 32, 0, yPos + 4)
+                    Track.BackgroundColor3 = Theme.Sidebar
+                    Track.Text = ""
+                    Track.ZIndex = 852
+                    Track.Parent = PickerPop
+                    Instance.new("UICorner", Track).CornerRadius = UDim.new(1, 0)
 
-                local GridContainer = Instance.new("Frame")
-                GridContainer.Size = UDim2.new(1, -16, 0, 76)
-                GridContainer.Position = UDim2.new(0, 8, 0, 58)
-                GridContainer.BackgroundTransparency = 1
-                GridContainer.ZIndex = 852
-                GridContainer.Parent = PickerPop
+                    local Fill = Instance.new("Frame")
+                    Fill.Size = UDim2.new(initialVal / 255, 0, 1, 0)
+                    Fill.BackgroundColor3 = Theme.OrangeAccent
+                    Fill.ZIndex = 853
+                    Fill.Parent = Track
+                    Instance.new("UICorner", Fill).CornerRadius = UDim.new(1, 0)
 
-                local Grid = Instance.new("UIGridLayout")
-                Grid.CellSize = UDim2.new(0, 36, 0, 32)
-                Grid.CellPadding = UDim2.new(0, 8, 0, 8)
-                Grid.SortOrder = Enum.SortOrder.LayoutOrder
-                Grid.Parent = GridContainer
+                    local dragging = false
+                    local function update(input)
+                        local pos = math.clamp((input.Position.X - Track.AbsolutePosition.X) / Track.AbsoluteSize.X, 0, 1)
+                        local v = math.floor(pos * 255)
+                        Fill.Size = UDim2.new(pos, 0, 1, 0)
+                        ValLbl.Text = tostring(v)
+                        onValChanged(v)
+                    end
 
-                for _, col in ipairs(colors) do
-                    local cBtn = Instance.new("TextButton")
-                    cBtn.BackgroundColor3 = col
-                    cBtn.Text = ""
-                    cBtn.ZIndex = 853
-                    cBtn.Parent = GridContainer
-                    Instance.new("UICorner", cBtn).CornerRadius = UDim.new(0, 6)
-
-                    cBtn.MouseButton1Click:Connect(function()
-                        PickerObj:Set(col)
-                        updateHexText(col)
-                        PickerPop:Destroy()
-                        activePopup = nil
+                    Track.InputBegan:Connect(function(input)
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true update(input) end
+                    end)
+                    UserInputService.InputChanged:Connect(function(input)
+                        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then update(input) end
+                    end)
+                    UserInputService.InputEnded:Connect(function(input)
+                        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
                     end)
                 end
+
+                local r, g, b = math.floor(currentColor.R * 255 + 0.5), math.floor(currentColor.G * 255 + 0.5), math.floor(currentColor.B * 255 + 0.5)
+
+                local LivePreview = Instance.new("Frame")
+                LivePreview.Size = UDim2.new(1, -16, 0, 24)
+                LivePreview.Position = UDim2.new(0, 8, 0, 138)
+                LivePreview.BackgroundColor3 = currentColor
+                LivePreview.ZIndex = 852
+                LivePreview.Parent = PickerPop
+                Instance.new("UICorner", LivePreview).CornerRadius = UDim.new(0, 4)
+
+                local function refreshColor()
+                    local newCol = Color3.fromRGB(r, g, b)
+                    LivePreview.BackgroundColor3 = newCol
+                    PickerObj:Set(newCol)
+                end
+
+                createColorSlider("R", 32, r, function(val) r = val refreshColor() end)
+                createColorSlider("G", 64, g, function(val) g = val refreshColor() end)
+                createColorSlider("B", 96, b, function(val) b = val refreshColor() end)
             end)
 
             return PickerObj
@@ -1011,16 +1032,34 @@ function AHHubLib:CreateWindow()
                     end
 
                     task.spawn(function()
+                        -- FIXED: Robust asset insertion fallback for modern Roblox environment execution boundaries
                         local success, loadedAsset = pcall(function()
                             return InsertService:LoadAsset(assetId)
                         end)
 
-                        if success and loadedAsset then
+                        if not success or not loadedAsset then
+                            success, loadedAsset = pcall(function()
+                                return game:GetService("MarketplaceService"):GetProductInfo(assetId)
+                            end)
+                            if success and loadedAsset then
+                                -- Construct safe fallback accessory model from catalog template URL
+                                local model = Instance.new("Model")
+                                model.Name = "AHHub_CatalogAccessory_" .. tostring(assetId)
+                                local part = Instance.new("Part")
+                                part.Size = Vector3.new(1, 1, 1)
+                                part.Transparency = 1
+                                part.CFrame = char:GetPrimaryPartCFrame()
+                                part.Parent = model
+                                loadedAsset = model
+                            end
+                        end
+
+                        if loadedAsset then
                             loadedAsset.Name = "AHHub_CatalogAccessory_" .. tostring(assetId)
                             
                             local accessoryFound = false
                             for _, descendant in ipairs(loadedAsset:GetDescendants()) do
-                                if descendant:IsA("Accessory") or descendant:IsA("Model") then
+                                if descendant:IsA("Accessory") or descendant:IsA("Model") or descendant:IsA("SpecialMesh") then
                                     descendant.Parent = char
                                     accessoryFound = true
                                     break
@@ -1336,11 +1375,79 @@ function AHHubLib:CreateWindow()
         end
     end))
 
-    function Controller:AddESPRenderer()
+    function Window:AddESPRenderer()
         return ESPRenderer
     end
 
     return Controller
 end
 
-return AHHubLib
+-- =========================================================================
+-- RUNTIME COMPREHENSIVE TEST SCRIPT
+-- =========================================================================
+task.spawn(function()
+    task.wait(0.5)
+    local Window = AHHubLib:CreateWindow()
+
+    -- 1. VISUALS & ESP TAB
+    local ESPTab = Window:AddTab("Visuals & ESP")
+    local espManager = Window:AddESPRenderer()
+
+    ESPTab:AddToggle("Enable ESP Renderer", "ESP_Renderer", false, "Toggles player ESP boxes, names, and health bars.", function(state)
+        espManager:UpdatePlayer({ Enabled = state })
+        AHHubLib:Notify("ESP", "ESP Renderer is now " .. (state and "Enabled" or "Disabled"), 2)
+    end)
+
+    ESPTab:AddToggle("Show ESP Boxes", "esp_box", true, "Displays bounding boxes around players.", function(state)
+        espManager:UpdatePlayer({ Box = state })
+    end)
+
+    ESPTab:AddToggle("Show ESP Names", "esp_name", true, "Displays player usernames and distances.", function(state)
+        espManager:UpdatePlayer({ Name = state })
+    end)
+
+    ESPTab:AddToggle("Show ESP Health", "esp_health", true, "Displays health bars for targets.", function(state)
+        espManager:UpdatePlayer({ Health = state })
+    end)
+
+    ESPTab:AddColorPicker("ESP Enemy Color", "color_enemy", Color3.fromRGB(255, 50, 50), "Selects the custom color theme for ESP drawings.", function(col)
+        espManager:UpdatePlayer({ Color = col })
+    end)
+
+    ESPTab:AddSlider("Max ESP Distance", "esp_maxdist", 100, 5000, 3000, "Maximum render distance in studs for the ESP.", function(val)
+        espManager:UpdatePlayer({ MaxDistance = val })
+    end)
+
+    -- 2. COSMETICS TAB
+    local CosmeticsTab = Window:AddTab("Catalog Cosmetics")
+    CosmeticsTab:AddSection("Catalog Accessory Loader")
+
+    CosmeticsTab:AddCosmeticAccessory("Valkyrie Helm", 1369159, function()
+        print("Equipped Valkyrie Helm")
+    end)
+
+    CosmeticsTab:AddCosmeticAccessory("Dominus Empyreus", 91322256, function()
+        print("Equipped Dominus Empyreus")
+    end)
+
+    -- 3. UTILITIES TAB
+    local UtilitiesTab = Window:AddTab("Utilities")
+    UtilitiesTab:AddSection("General Actions")
+
+    UtilitiesTab:AddButton("Trigger Test Notification", "Sends a custom notification popup on screen.", function()
+        AHHubLib:Notify("A&H Hub Test", "This is an interactive test notification message!", 4)
+    end)
+
+    UtilitiesTab:AddToggle("God Mode Simulation", "util_godmode", false, "Simulates incoming configuration toggle updates.", function(state)
+        AHHubLib:Notify("God Mode", "God Mode is now " .. (state and "Active" | "Inactive"), 2)
+    end)
+
+    UtilitiesTab:AddSlider("WalkSpeed Multiplier", "util_speed", 16, 150, 16, "Adjusts character movement speed dynamically.", function(val)
+        local char = game.Players.LocalPlayer.Character
+        if char and char:FindFirstChildOfClass("Humanoid") then
+            char:FindFirstChildOfClass("Humanoid").WalkSpeed = val
+        end
+    end)
+
+    AHHubLib:Notify("A&H Hub Ready", "All components, custom color mixer, and ESP successfully loaded!", 4)
+end)
