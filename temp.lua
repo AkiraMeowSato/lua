@@ -1,9 +1,9 @@
 -- =========================================================================
--- A&H HUB v1.6.8 - RESET ON CLOSE & MINIMIZED COFFEE DOCK ICON
+-- A&H HUB v1.7.0 - POLISHED PROFILE, CONTRASTING WINDOW & FLUID ANIMATIONS
 -- =========================================================================
 
 local AHHubLib = {
-    Version = "1.6.8",
+    Version = "1.7.0",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -14,23 +14,24 @@ local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
-local InsertService = game:GetService("InsertService")
+local CoreGui = game:GetService("CoreGui")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
 local Theme = {
-    Bg = Color3.fromRGB(24, 18, 15),
-    Sidebar = Color3.fromRGB(32, 24, 20),
-    CardBg = Color3.fromRGB(40, 30, 25),
-    CardBorder = Color3.fromRGB(65, 48, 40),
-    TitleBar = Color3.fromRGB(36, 26, 21),
+    Bg = Color3.fromRGB(20, 14, 11),
+    WindowBg = Color3.fromRGB(28, 20, 16),
+    Sidebar = Color3.fromRGB(24, 18, 14),
+    CardBg = Color3.fromRGB(34, 25, 20),
+    CardBorder = Color3.fromRGB(55, 40, 32),
+    TitleBar = Color3.fromRGB(30, 22, 18),
     TextBright = Color3.fromRGB(255, 248, 240),
     TextMain = Color3.fromRGB(230, 210, 190),
     TextMuted = Color3.fromRGB(160, 135, 120),
     OrangeAccent = Color3.fromRGB(210, 130, 60),
-    TabSelected = Color3.fromRGB(55, 40, 32),
-    Disabled = Color3.fromRGB(60, 50, 45),
+    TabSelected = Color3.fromRGB(48, 34, 27),
+    Disabled = Color3.fromRGB(50, 40, 35),
     RedDanger = Color3.fromRGB(200, 60, 60),
     YellowWarn = Color3.fromRGB(220, 160, 50),
     GreenOk = Color3.fromRGB(60, 180, 80)
@@ -43,7 +44,7 @@ AHHubLib.SliderCallbacks = {}
 local function getGuiParent()
     local ok, hui = pcall(function() return gethui and gethui() end)
     if ok and hui then return hui end
-    return LocalPlayer:WaitForChild("PlayerGui")
+    return CoreGui:FindFirstChild("RobloxGui") or LocalPlayer:WaitForChild("PlayerGui")
 end
 
 local function Tween(object, info, properties)
@@ -64,7 +65,7 @@ local function MakeDraggable(dragHandle, frame)
     UserInputService.InputChanged:Connect(function(input)
         if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             local delta = input.Position - dragStart
-            Tween(frame, TweenInfo.new(0.05, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
+            Tween(frame, TweenInfo.new(0.04, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {
                 Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
             })
         end
@@ -95,15 +96,19 @@ function AHHubLib:CreateWindow()
 
     local Window = Instance.new("Frame")
     Window.Name = "MainWindow"
-    Window.Size = DefaultSize
-    Window.Position = DefaultPos
-    Window.BackgroundColor3 = Theme.Bg
+    Window.Size = UDim2.new(0, 0, 0, 0)
+    Window.Position = UDim2.new(0.5, 0, 0.5, 0)
+    Window.BackgroundColor3 = Theme.WindowBg
     Window.BorderSizePixel = 0
-    Window.ClipsDescendants = false
+    Window.ClipsDescendants = true
     Window.Parent = ScreenGui
-    Instance.new("UICorner", Window).CornerRadius = UDim.new(0, 10)
+    Instance.new("UICorner", Window).CornerRadius = UDim.new(0, 14)
 
-    -- Floating Dock Icon for Minimized State (Bottom Right)
+    Tween(Window, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+        Size = DefaultSize,
+        Position = DefaultPos
+    })
+
     local DockIcon = Instance.new("TextButton")
     DockIcon.Name = "AHHub_DockIcon"
     DockIcon.Size = UDim2.new(0, 48, 0, 48)
@@ -132,8 +137,8 @@ function AHHubLib:CreateWindow()
                                      mousePos.Y >= absPos.Y and mousePos.Y <= absPos.Y + absSize.Y)
                 
                 if not insidePopup then
-                    activePopup:Destroy()
-                    activePopup = nil
+                    Tween(activePopup, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Size = UDim2.new(0,0,0,0)})
+                    task.delay(0.15, function() if activePopup then activePopup:Destroy() activePopup = nil end end)
                 end
             end
         end
@@ -150,7 +155,7 @@ function AHHubLib:CreateWindow()
     TooltipLabel.Visible = false
     TooltipLabel.ZIndex = 400
     TooltipLabel.Parent = ScreenGui
-    Instance.new("UICorner", TooltipLabel).CornerRadius = UDim.new(0, 4)
+    Instance.new("UICorner", TooltipLabel).CornerRadius = UDim.new(0, 6)
 
     local function BindTooltip(object, text)
         if not text or text == "" then return end
@@ -174,7 +179,7 @@ function AHHubLib:CreateWindow()
     TitleBar.BorderSizePixel = 0
     TitleBar.ZIndex = 10
     TitleBar.Parent = Window
-    Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 10)
+    Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 14)
     MakeDraggable(TitleBar, Window)
 
     local CoffeeLogoBtn = Instance.new("TextButton")
@@ -218,8 +223,8 @@ function AHHubLib:CreateWindow()
         btn.Parent = ControlsHolder
         Instance.new("UICorner", btn).CornerRadius = UDim.new(1, 0)
 
-        btn.MouseEnter:Connect(function() Tween(btn, TweenInfo.new(0.1), {BackgroundColor3 = hoverColor}) end)
-        btn.MouseLeave:Connect(function() Tween(btn, TweenInfo.new(0.1), {BackgroundColor3 = color}) end)
+        btn.MouseEnter:Connect(function() Tween(btn, TweenInfo.new(0.15), {BackgroundColor3 = hoverColor, Size = UDim2.new(0, 18, 0, 18)}) end)
+        btn.MouseLeave:Connect(function() Tween(btn, TweenInfo.new(0.15), {BackgroundColor3 = color, Size = UDim2.new(0, 16, 0, 16)}) end)
         btn.MouseButton1Click:Connect(callback)
         return btn
     end
@@ -236,6 +241,36 @@ function AHHubLib:CreateWindow()
     Sidebar.BorderSizePixel = 0
     Sidebar.Parent = Window
 
+    -- User Profile Chip in Bottom Left of Sidebar
+    local ProfileFrame = Instance.new("Frame")
+    ProfileFrame.Size = UDim2.new(1, -12, 0, 42)
+    ProfileFrame.Position = UDim2.new(0, 6, 1, -48)
+    ProfileFrame.BackgroundColor3 = Theme.CardBg
+    ProfileFrame.BorderSizePixel = 1
+    ProfileFrame.BorderColor3 = Theme.CardBorder
+    ProfileFrame.Parent = Sidebar
+    Instance.new("UICorner", ProfileFrame).CornerRadius = UDim.new(0, 8)
+
+    local AvatarImg = Instance.new("ImageLabel")
+    AvatarImg.Size = UDim2.new(0, 30, 0, 30)
+    AvatarImg.Position = UDim2.new(0, 6, 0.5, -15)
+    AvatarImg.BackgroundTransparency = 1
+    AvatarImg.Image = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48)
+    AvatarImg.Parent = ProfileFrame
+    Instance.new("UICorner", AvatarImg).CornerRadius = UDim.new(1, 0)
+
+    local UserNameLbl = Instance.new("TextLabel")
+    UserNameLbl.Size = UDim2.new(1, -42, 1, 0)
+    UserNameLbl.Position = UDim2.new(0, 40, 0, 0)
+    UserNameLbl.BackgroundTransparency = 1
+    UserNameLbl.Font = Enum.Font.GothamBold
+    UserNameLbl.Text = LocalPlayer.DisplayName
+    UserNameLbl.TextColor3 = Theme.TextBright
+    UserNameLbl.TextSize = 11
+    UserNameLbl.TextTruncate = Enum.TextTruncate.AtEnd
+    UserNameLbl.TextXAlignment = Enum.TextXAlignment.Left
+    UserNameLbl.Parent = ProfileFrame
+
     local ContentContainer = Instance.new("Frame")
     ContentContainer.Size = UDim2.new(1, -170, 1, -37)
     ContentContainer.Position = UDim2.new(0, 165, 0, 32)
@@ -244,7 +279,6 @@ function AHHubLib:CreateWindow()
 
     local ShowConfirmation, ResetToDefaultsAndClose
 
-    -- Reset all flags and call their respective callbacks back to defaults before closing/terminating
     ResetToDefaultsAndClose = function()
         for flag, defaultVal in pairs(AHHubLib.Defaults) do
             AHHubLib.Flags[flag] = defaultVal
@@ -255,7 +289,8 @@ function AHHubLib:CreateWindow()
                 pcall(function() AHHubLib.SliderCallbacks[flag](defaultVal) end)
             end
         end
-        ScreenGui:Destroy()
+        Tween(Window, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(0,0,0,0)})
+        task.delay(0.25, function() ScreenGui:Destroy() end)
     end
 
     local function ToggleMinimize()
@@ -264,13 +299,13 @@ function AHHubLib:CreateWindow()
             if not isMaximized then savedSize = Window.Size end
             Sidebar.Visible = false
             ContentContainer.Visible = false
-            Window.Visible = false
-            DockIcon.Visible = true
+            Tween(Window, TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0)})
+            task.delay(0.2, function() Window.Visible = false DockIcon.Visible = true end)
         else
             Window.Visible = true
             DockIcon.Visible = false
-            Tween(Window, TweenInfo.new(0.2), {Size = isMaximized and UDim2.new(1, 0, 1, 0) or savedSize})
-            task.delay(0.15, function() Sidebar.Visible = true ContentContainer.Visible = true end)
+            Tween(Window, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = isMaximized and UDim2.new(1, 0, 1, 0) or savedSize})
+            task.delay(0.1, function() Sidebar.Visible = true ContentContainer.Visible = true end)
         end
     end
 
@@ -283,10 +318,10 @@ function AHHubLib:CreateWindow()
         if isMaximized then
             savedPosition = Window.Position
             savedSize = Window.Size
-            Tween(Window, TweenInfo.new(0.2), {Position = UDim2.new(0, 0, 0, 0), Size = UDim2.new(1, 0, 1, 0)})
+            Tween(Window, TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = UDim2.new(0, 0, 0, 0), Size = UDim2.new(1, 0, 1, 0)})
             Window.BorderSizePixel = 0
         else
-            Tween(Window, TweenInfo.new(0.2), {Position = savedPosition, Size = savedSize})
+            Tween(Window, TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {Position = savedPosition, Size = savedSize})
         end
     end)
 
@@ -311,7 +346,7 @@ function AHHubLib:CreateWindow()
         duration = duration or 3
         local Card = Instance.new("Frame")
         Card.Size = UDim2.new(0, 250, 0, 55)
-        Card.Position = UDim2.new(0, 0, 0, 15)
+        Card.Position = UDim2.new(0, 20, 0, 15)
         Card.BackgroundColor3 = Theme.CardBg
         Card.BackgroundTransparency = 1
         Card.BorderSizePixel = 1
@@ -344,17 +379,17 @@ function AHHubLib:CreateWindow()
         Sub.TextTransparency = 1
         Sub.Parent = Card
 
-        Tween(Card, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+        Tween(Card, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
             Position = UDim2.new(0, 0, 0, 0),
-            BackgroundTransparency = 0.35
+            BackgroundTransparency = 0.15
         })
-        Tween(Txt, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {TextTransparency = 0})
-        Tween(Sub, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {TextTransparency = 0})
+        Tween(Txt, TweenInfo.new(0.3), {TextTransparency = 0})
+        Tween(Sub, TweenInfo.new(0.3), {TextTransparency = 0})
 
         task.delay(duration, function()
-            local fadeOutCard = Tween(Card, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1, Size = UDim2.new(0, 220, 0, 0)})
-            Tween(Txt, TweenInfo.new(0.3), {TextTransparency = 1})
-            Tween(Sub, TweenInfo.new(0.3), {TextTransparency = 1})
+            local fadeOutCard = Tween(Card, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1, Size = UDim2.new(0, 220, 0, 0)})
+            Tween(Txt, TweenInfo.new(0.25), {TextTransparency = 1})
+            Tween(Sub, TweenInfo.new(0.25), {TextTransparency = 1})
             fadeOutCard.Completed:Connect(function()
                 Card:Destroy()
             end)
@@ -365,20 +400,25 @@ function AHHubLib:CreateWindow()
         local Overlay = Instance.new("Frame")
         Overlay.Size = UDim2.new(1, 0, 1, 0)
         Overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-        Overlay.BackgroundTransparency = 0.5
+        Overlay.BackgroundTransparency = 0.7
         Overlay.ZIndex = 250
         Overlay.Parent = Window
 
         local Box = Instance.new("Frame")
-        Box.Size = UDim2.new(0, 300, 0, 140)
-        Box.Position = UDim2.new(0.5, -150, 0.5, -70)
+        Box.Size = UDim2.new(0, 0, 0, 0)
+        Box.Position = UDim2.new(0.5, 0, 0.5, 0)
         Box.BackgroundColor3 = Theme.CardBg
-        Box.BackgroundTransparency = 0.15
+        Box.BackgroundTransparency = 0.1
         Box.BorderSizePixel = 1
         Box.BorderColor3 = Theme.RedDanger
         Box.ZIndex = 251
         Box.Parent = Overlay
-        Instance.new("UICorner", Box).CornerRadius = UDim.new(0, 8)
+        Instance.new("UICorner", Box).CornerRadius = UDim.new(0, 10)
+
+        Tween(Box, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0, 300, 0, 140),
+            Position = UDim2.new(0.5, -150, 0.5, -70)
+        })
 
         local T = Instance.new("TextLabel")
         T.Size = UDim2.new(1, 0, 0, 30)
@@ -413,7 +453,7 @@ function AHHubLib:CreateWindow()
         ConfirmBtn.TextSize = 10
         ConfirmBtn.ZIndex = 252
         ConfirmBtn.Parent = Box
-        Instance.new("UICorner", ConfirmBtn).CornerRadius = UDim.new(0, 4)
+        Instance.new("UICorner", ConfirmBtn).CornerRadius = UDim.new(0, 6)
 
         local CancelBtn = Instance.new("TextButton")
         CancelBtn.Size = UDim2.new(0, 90, 0, 26)
@@ -425,15 +465,21 @@ function AHHubLib:CreateWindow()
         CancelBtn.TextSize = 10
         CancelBtn.ZIndex = 252
         CancelBtn.Parent = Box
-        Instance.new("UICorner", CancelBtn).CornerRadius = UDim.new(0, 4)
+        Instance.new("UICorner", CancelBtn).CornerRadius = UDim.new(0, 6)
 
-        ConfirmBtn.MouseButton1Click:Connect(function() Overlay:Destroy() onAccept() end)
-        CancelBtn.MouseButton1Click:Connect(function() Overlay:Destroy() end)
+        ConfirmBtn.MouseButton1Click:Connect(function() 
+            Tween(Box, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(0,0,0,0), Position = UDim2.new(0.5,0,0.5,0)})
+            task.delay(0.2, function() Overlay:Destroy() onAccept() end)
+        end)
+        CancelBtn.MouseButton1Click:Connect(function() 
+            Tween(Box, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(0,0,0,0), Position = UDim2.new(0.5,0,0.5,0)})
+            task.delay(0.2, function() Overlay:Destroy() end)
+        end)
     end
 
     local NavHolder = Instance.new("Frame")
     NavHolder.Position = UDim2.new(0, 8, 0, 38)
-    NavHolder.Size = UDim2.new(1, -16, 1, -46)
+    NavHolder.Size = UDim2.new(1, -16, 1, -94)
     NavHolder.BackgroundTransparency = 1
     NavHolder.Parent = Sidebar
 
@@ -465,7 +511,7 @@ function AHHubLib:CreateWindow()
             SecFrame.BackgroundColor3 = Theme.Sidebar
             SecFrame.BorderSizePixel = 0
             SecFrame.Parent = PageView
-            Instance.new("UICorner", SecFrame).CornerRadius = UDim.new(0, 4)
+            Instance.new("UICorner", SecFrame).CornerRadius = UDim.new(0, 6)
 
             local Header = Instance.new("TextButton")
             Header.Size = UDim2.new(1, 0, 0, 26)
@@ -509,16 +555,19 @@ function AHHubLib:CreateWindow()
             if activePopup then activePopup:Destroy() activePopup = nil end
 
             local Popup = Instance.new("Frame")
-            Popup.Size = UDim2.new(0, 220, 0, 160)
+            Popup.Size = UDim2.new(0, 0, 0, 0)
             local mouseLoc = UserInputService:GetMouseLocation()
-            Popup.Position = UDim2.new(0, math.clamp(mouseLoc.X + 10, 10, Camera.ViewportSize.X - 230), 0, math.clamp(mouseLoc.Y, 10, Camera.ViewportSize.Y - 170))
+            local targetPos = UDim2.new(0, math.clamp(mouseLoc.X + 10, 10, Camera.ViewportSize.X - 230), 0, math.clamp(mouseLoc.Y, 10, Camera.ViewportSize.Y - 170))
+            Popup.Position = targetPos
             Popup.BackgroundColor3 = Theme.CardBg
-            Popup.BackgroundTransparency = 0.15
+            Popup.BackgroundTransparency = 0.1
             Popup.BorderSizePixel = 1
             Popup.BorderColor3 = Theme.OrangeAccent
             Popup.ZIndex = 300
             Popup.Parent = ScreenGui
-            Instance.new("UICorner", Popup).CornerRadius = UDim.new(0, 6)
+            Instance.new("UICorner", Popup).CornerRadius = UDim.new(0, 8)
+
+            Tween(Popup, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 220, 0, 160)})
             
             local TopBar = Instance.new("Frame")
             TopBar.Size = UDim2.new(1, 0, 0, 24)
@@ -526,7 +575,7 @@ function AHHubLib:CreateWindow()
             TopBar.BorderSizePixel = 0
             TopBar.ZIndex = 301
             TopBar.Parent = Popup
-            Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 6)
+            Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 8)
             MakeDraggable(TopBar, Popup)
 
             activePopup = Popup
@@ -579,6 +628,9 @@ function AHHubLib:CreateWindow()
             Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
             BindTooltip(Btn, tooltipText)
 
+            Btn.MouseEnter:Connect(function() Tween(Btn, TweenInfo.new(0.12), {BackgroundColor3 = Theme.TabSelected, BorderColor3 = Theme.OrangeAccent}) end)
+            Btn.MouseLeave:Connect(function() Tween(Btn, TweenInfo.new(0.12), {BackgroundColor3 = Theme.CardBg, BorderColor3 = Theme.CardBorder}) end)
+
             local Obj = {}
             function Obj:AddSubMenu(configFunc)
                 local Gear = Instance.new("TextButton")
@@ -596,7 +648,11 @@ function AHHubLib:CreateWindow()
                 end)
             end
 
-            Btn.MouseButton1Click:Connect(function() callback() end)
+            Btn.MouseButton1Click:Connect(function()
+                Tween(Btn, TweenInfo.new(0.06), {Size = UDim2.new(1, -12, 0, 30)})
+                Tween(Btn, TweenInfo.new(0.06), {Size = UDim2.new(1, -10, 0, 32)})
+                callback()
+            end)
             return Obj
         end
 
@@ -639,7 +695,7 @@ function AHHubLib:CreateWindow()
             function ToggleObject:Set(state)
                 toggled = state
                 AHHubLib.Flags[flag] = toggled
-                Tween(Switch, TweenInfo.new(0.15), {BackgroundColor3 = toggled and Theme.OrangeAccent or Theme.Sidebar})
+                Tween(Switch, TweenInfo.new(0.18, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundColor3 = toggled and Theme.OrangeAccent or Theme.Sidebar})
                 callback(toggled)
             end
 
@@ -661,6 +717,9 @@ function AHHubLib:CreateWindow()
             Btn.AutoButtonColor = false
             Btn.Parent = PageView
             Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
+
+            Btn.MouseEnter:Connect(function() Tween(Btn, TweenInfo.new(0.12), {BackgroundColor3 = Theme.TabSelected, BorderColor3 = Theme.OrangeAccent}) end)
+            Btn.MouseLeave:Connect(function() Tween(Btn, TweenInfo.new(0.12), {BackgroundColor3 = Theme.CardBg, BorderColor3 = Theme.CardBorder}) end)
 
             Btn.MouseButton1Click:Connect(function()
                 if customEquipCallback then
@@ -770,7 +829,7 @@ function AHHubLib:CreateWindow()
         TabBtn.TextSize = 11
         TabBtn.TextXAlignment = Enum.TextXAlignment.Left
         TabBtn.Parent = NavHolder
-        Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 4)
+        Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 6)
 
         local MainTabFrame = Instance.new("ScrollingFrame")
         MainTabFrame.Size = UDim2.new(1, 0, 1, 0)
