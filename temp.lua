@@ -1,9 +1,9 @@
 -- =========================================================
--- A&H HUB v1.5.4 - WITH WINDOW CONTROLS (CLOSE/MIN/MAX)
+-- A&H HUB v1.5.5 - FIXED WINDOW CONTROLS POSITIONING
 -- =========================================================
 
 local AHHubLib = {
-    Version = "1.5.4",
+    Version = "1.5.5",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -11,7 +11,6 @@ local AHHubLib = {
 
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
-local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 
 local LocalPlayer = Players.LocalPlayer
@@ -69,9 +68,6 @@ local function MakeDraggable(dragHandle, frame)
     end)
 end
 
--- =========================================================
--- MAIN WINDOW CREATION
--- =========================================================
 function AHHubLib:CreateWindow()
     local ParentGui = getGuiParent()
     local ExistingUI = ParentGui:FindFirstChild("AHHub_Dashboard")
@@ -106,7 +102,7 @@ function AHHubLib:CreateWindow()
     TooltipLabel.TextColor3 = Theme.TextBright
     TooltipLabel.TextSize = 10
     TooltipLabel.Visible = false
-    TooltipLabel.ZIndex = 100
+    TooltipLabel.ZIndex = 200
     TooltipLabel.Parent = ScreenGui
     Instance.new("UICorner", TooltipLabel).CornerRadius = UDim.new(0, 4)
 
@@ -131,6 +127,7 @@ function AHHubLib:CreateWindow()
     TitleBar.Size = UDim2.new(1, 0, 0, 32)
     TitleBar.BackgroundColor3 = Theme.TitleBar
     TitleBar.BorderSizePixel = 0
+    TitleBar.ZIndex = 10
     TitleBar.Parent = Window
     Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 10)
     MakeDraggable(TitleBar, Window)
@@ -144,32 +141,29 @@ function AHHubLib:CreateWindow()
     WindowTitle.TextColor3 = Theme.TextMain
     WindowTitle.TextSize = 12
     WindowTitle.TextXAlignment = Enum.TextXAlignment.Left
+    WindowTitle.ZIndex = 11
     WindowTitle.Parent = TitleBar
 
     -- =========================================================
-    -- WINDOW CONTROLS CONTAINER (CLOSE / MAXIMIZE / MINIMIZE)
+    -- EXPLICIT WINDOW CONTROLS (CLOSE / MAXIMIZE / MINIMIZE)
     -- =========================================================
     local ControlsHolder = Instance.new("Frame")
-    ControlsHolder.Size = UDim2.new(0, 90, 1, 0)
-    ControlsHolder.Position = UDim2.new(1, -95, 0, 0)
+    ControlsHolder.Size = UDim2.new(0, 95, 0, 32)
+    ControlsHolder.Position = UDim2.new(1, -100, 0, 0)
     ControlsHolder.BackgroundTransparency = 1
+    ControlsHolder.ZIndex = 15
     ControlsHolder.Parent = TitleBar
 
-    local ControlsLayout = Instance.new("UIListLayout")
-    ControlsLayout.FillDirection = Enum.FillDirection.Horizontal
-    ControlsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
-    ControlsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-    ControlsLayout.Padding = UDim.new(0, 4)
-    ControlsLayout.Parent = ControlsHolder
-
-    local function MakeWindowButton(text, color, hoverColor)
+    local function MakeWindowButton(text, color, hoverColor, xPos, callback)
         local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(0, 24, 0, 20)
+        btn.Size = UDim2.new(0, 26, 0, 22)
+        btn.Position = UDim2.new(0, xPos, 0.5, -11)
         btn.BackgroundColor3 = color
         btn.Font = Enum.Font.GothamBold
         btn.Text = text
         btn.TextColor3 = Theme.TextBright
         btn.TextSize = 12
+        btn.ZIndex = 16
         btn.Parent = ControlsHolder
         Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
 
@@ -179,12 +173,9 @@ function AHHubLib:CreateWindow()
         btn.MouseLeave:Connect(function()
             Tween(btn, TweenInfo.new(0.1), {BackgroundColor3 = color})
         end)
+        btn.MouseButton1Click:Connect(callback)
         return btn
     end
-
-    local MinimizeBtn = MakeWindowButton("—", Theme.Sidebar, Theme.TabSelected)
-    local MaximizeBtn = MakeWindowButton("□", Theme.Sidebar, Theme.TabSelected)
-    local CloseBtn    = MakeWindowButton("✕", Color3.fromRGB(180, 50, 50), Theme.RedDanger)
 
     -- Window State Flags
     local isMinimized = false
@@ -206,13 +197,11 @@ function AHHubLib:CreateWindow()
     ContentContainer.BackgroundTransparency = 1
     ContentContainer.Parent = Window
 
-    -- Button Logic
-    MinimizeBtn.MouseButton1Click:Connect(function()
+    -- Button Logic Definitions
+    MakeWindowButton("—", Theme.Sidebar, Theme.TabSelected, 0, function()
         isMinimized = not isMinimized
         if isMinimized then
-            if not isMaximized then
-                savedSize = Window.Size
-            end
+            if not isMaximized then savedSize = Window.Size end
             Sidebar.Visible = false
             ContentContainer.Visible = false
             Tween(Window, TweenInfo.new(0.2), {Size = UDim2.new(Window.Size.X.Scale, Window.Size.X.Offset, 0, 32)})
@@ -225,25 +214,19 @@ function AHHubLib:CreateWindow()
         end
     end)
 
-    MaximizeBtn.MouseButton1Click:Connect(function()
+    MakeWindowButton("□", Theme.Sidebar, Theme.TabSelected, 31, function()
         if isMinimized then return end
         isMaximized = not isMaximized
         if isMaximized then
             savedPosition = Window.Position
             savedSize = Window.Size
-            Tween(Window, TweenInfo.new(0.2), {
-                Position = UDim2.new(0, 20, 0, 20),
-                Size = UDim2.new(1, -40, 1, -40)
-            })
+            Tween(Window, TweenInfo.new(0.2), {Position = UDim2.new(0, 20, 0, 20), Size = UDim2.new(1, -40, 1, -40)})
         else
-            Tween(Window, TweenInfo.new(0.2), {
-                Position = savedPosition,
-                Size = savedSize
-            })
+            Tween(Window, TweenInfo.new(0.2), {Position = savedPosition, Size = savedSize})
         end
     end)
 
-    CloseBtn.MouseButton1Click:Connect(function()
+    MakeWindowButton("✕", Color3.fromRGB(180, 50, 50), Theme.RedDanger, 62, function()
         ScreenGui:Destroy()
     end)
 
@@ -402,7 +385,6 @@ function AHHubLib:CreateWindow()
     NavLayout.Padding = UDim.new(0, 4)
     NavLayout.Parent = NavHolder
 
-    -- Search Bar Filtering Logic
     SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
         local query = string.lower(SearchBox.Text)
         for _, page in ipairs(ContentContainer:GetChildren()) do
@@ -421,7 +403,6 @@ function AHHubLib:CreateWindow()
 
     local Controller = { CurrentTabBtn = nil, Pages = {}, RegisteredKeybinds = {} }
 
-    -- GLOBAL KEYBIND LISTENER
     UserInputService.InputBegan:Connect(function(input, gpe)
         if gpe then return end
         if input.UserInputType == Enum.UserInputType.Keyboard then
@@ -433,7 +414,6 @@ function AHHubLib:CreateWindow()
         end
     end)
 
-    -- BUILD ELEMENT LOGIC INSIDE CONTAINERS/SECTIONS
     local function CreateElementBuilder(PageView)
         local Elements = {}
 
@@ -449,7 +429,6 @@ function AHHubLib:CreateWindow()
         end
         RegisterScrollAutoResize()
 
-        -- 1. ADD SECTION
         function Elements:AddSection(sectionTitle)
             local SecFrame = Instance.new("Frame")
             SecFrame.Size = UDim2.new(1, -10, 0, 26)
@@ -501,7 +480,6 @@ function AHHubLib:CreateWindow()
             return CreateElementBuilder(Container)
         end
 
-        -- 2. BUTTON
         function Elements:AddButton(text, tooltipText, callback)
             callback = callback or function() end
             local Btn = Instance.new("TextButton")
@@ -539,15 +517,12 @@ function AHHubLib:CreateWindow()
             end
 
             Btn.MouseButton1Click:Connect(function()
-                if not isDisabled then
-                    callback()
-                end
+                if not isDisabled then callback() end
             end)
 
             return ButtonController
         end
 
-        -- 3. TOGGLE
         function Elements:AddToggle(text, flag, defaultState, tooltipText, callback)
             callback = callback or function() end
             local toggled = defaultState or false
@@ -598,7 +573,6 @@ function AHHubLib:CreateWindow()
             return ToggleObject
         end
 
-        -- 4. SLIDER
         function Elements:AddSlider(text, flag, min, max, default, tooltipText, callback)
             callback = callback or function() end
             local val = default or min
@@ -663,10 +637,7 @@ function AHHubLib:CreateWindow()
             end
 
             Track.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    dragging = true
-                    updateSlider(input)
-                end
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true updateSlider(input) end
             end)
             UserInputService.InputChanged:Connect(function(input)
                 if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then updateSlider(input) end
@@ -676,7 +647,6 @@ function AHHubLib:CreateWindow()
             end)
         end
 
-        -- 5. KEYBIND PICKER
         function Elements:AddKeybind(text, flag, defaultKey, callback)
             callback = callback or function() end
             local currentKey = defaultKey or Enum.KeyCode.F
@@ -732,7 +702,6 @@ function AHHubLib:CreateWindow()
             table.insert(Controller.RegisteredKeybinds, {Key = currentKey, Callback = function() callback(currentKey) end})
         end
 
-        -- 6. COLOR PICKER
         function Elements:AddColorPicker(text, flag, defaultColor, callback)
             callback = callback or function() end
             defaultColor = defaultColor or Color3.fromRGB(255, 255, 255)
@@ -837,7 +806,6 @@ function AHHubLib:CreateWindow()
             end)
         end
 
-        -- 7. RESET-TO-DEFAULT BUTTON GENERATOR
         function Elements:AddResetDefaultsButton()
             Elements:AddButton("⚠️ Reset Settings to Default", "Resets all library flags back to original values", function()
                 ShowConfirmation("Reset Settings?", "Are you sure you want to revert all values back to default?", function()
@@ -852,7 +820,6 @@ function AHHubLib:CreateWindow()
         return Elements
     end
 
-    -- TAB CREATION CONTROLLER
     function Controller:AddTab(tabName)
         local TabBtn = Instance.new("TextButton")
         TabBtn.Size = UDim2.new(1, 0, 0, 26)
