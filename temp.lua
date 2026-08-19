@@ -627,7 +627,7 @@ function AHHubLib:CreateWindow()
 
         -- Fully Integrated AddESPForRenderer Method Fix
         function Elements:AddESPForRenderer(espName, callback)
-            return self:AddToggle("Enable " .. espName, "ESP_" .. espName, false, "Toggle native ESP renderer for " .. espName, callback)
+            return self:AddToggle("Enable " .. (espName or "ESP"), "ESP_" .. (espName or "Renderer"), false, "Toggle native ESP renderer", callback)
         end
 
         function Elements:AddCosmeticAccessory(assetName, assetId)
