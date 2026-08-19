@@ -1,9 +1,9 @@
 -- =========================================================
--- A&H HUB v1.5 - ADVANCED UI SUITE & ESP HELPERS
+-- A&H HUB v1.5.1 - FIXED UI SUITE & ESP HELPERS
 -- =========================================================
 
 local AHHubLib = {
-    Version = "1.5",
+    Version = "1.5.1",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -107,6 +107,7 @@ function AHHubLib:CreateWindow()
     TooltipLabel.Parent = ScreenGui
     Instance.new("UICorner", TooltipLabel).CornerRadius = UDim.new(0, 4)
 
+    -- FIX 1: Safe Tooltip Position Binding
     local function BindTooltip(object, text)
         if not text or text == "" then return end
         object.MouseEnter:Connect(function()
@@ -114,8 +115,9 @@ function AHHubLib:CreateWindow()
             TooltipLabel.Size = UDim2.new(0, TooltipLabel.TextBounds.X + 12, 0, 22)
             TooltipLabel.Visible = true
         end)
-        object.MouseMoved:Connect(function(input)
-            TooltipLabel.Position = UDim2.new(0, input.Position.X + 12, 0, input.Position.Y + 12)
+        object.MouseMoved:Connect(function(x, y)
+            local mousePos = UserInputService:GetMouseLocation()
+            TooltipLabel.Position = UDim2.new(0, mousePos.X + 12, 0, mousePos.Y + 12)
         end)
         object.MouseLeave:Connect(function()
             TooltipLabel.Visible = false
@@ -189,7 +191,7 @@ function AHHubLib:CreateWindow()
         Sub.Parent = Card
 
         task.delay(duration, function()
-            Tween(Card, TweenInfo.new(0.25), {BackgroundTransparency = 1}):Play()
+            Tween(Card, TweenInfo.new(0.25), {BackgroundTransparency = 1})
             task.wait(0.25)
             Card:Destroy()
         end)
@@ -346,12 +348,15 @@ function AHHubLib:CreateWindow()
     local function CreateElementBuilder(PageView)
         local Elements = {}
 
+        -- FIX 2: Check if target container is actually a ScrollingFrame before accessing CanvasSize
         local function RegisterScrollAutoResize()
-            local layout = PageView:FindFirstChildOfClass("UIListLayout")
-            if layout then
-                layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-                    PageView.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 15)
-                end)
+            if PageView:IsA("ScrollingFrame") then
+                local layout = PageView:FindFirstChildOfClass("UIListLayout")
+                if layout then
+                    layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+                        PageView.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 15)
+                    end)
+                end
             end
         end
         RegisterScrollAutoResize()
