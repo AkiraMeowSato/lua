@@ -1,11 +1,11 @@
 -- =========================================================================
--- A&H HUB v1.6.0 - FULLY FEATURED NATIVE DRAWING ESP API & UI LIBRARY
--- Updated with: Resizable Windows, Collapsible Toggle Sub-Menus, 
--- Cosmetic/Accessory Attachment Elements, and AddESPForRenderer.
+-- A&H HUB v1.6.1 - FULLY FEATURED NATIVE DRAWING ESP API & UI LIBRARY
+-- Updated with: Floating Popup Sub-Menus (Right-Click/Settings), 
+-- Custom Mesh/Part Cosmetics, Native Drawing ESP Implementation.
 -- =========================================================================
 
 local AHHubLib = {
-    Version = "1.6.0",
+    Version = "1.6.1",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -95,9 +95,20 @@ function AHHubLib:CreateWindow()
     Window.Position = DefaultPos
     Window.BackgroundColor3 = Theme.Bg
     Window.BorderSizePixel = 0
-    Window.ClipsDescendants = true
+    Window.ClipsDescendants = false
     Window.Parent = ScreenGui
     Instance.new("UICorner", Window).CornerRadius = UDim.new(0, 10)
+
+    -- Global popup manager to close floaters when clicking outside/main window
+    local activePopup = nil
+    UserInputService.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.MouseButton2 then
+            if activePopup and activePopup.Parent then
+                activePopup:Destroy()
+                activePopup = nil
+            end
+        end
+    end)
 
     local ResizeHandle = Instance.new("TextButton")
     ResizeHandle.Name = "ResizeHandle"
@@ -111,13 +122,9 @@ function AHHubLib:CreateWindow()
     ResizeHandle.Parent = Window
 
     local resizing = false
-    ResizeHandle.MouseButton1Down:Connect(function()
-        resizing = true
-    end)
+    ResizeHandle.MouseButton1Down:Connect(function() resizing = true end)
     UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            resizing = false
-        end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then resizing = false end
     end)
     UserInputService.InputChanged:Connect(function(input)
         if resizing and input.UserInputType == Enum.UserInputType.MouseMovement then
@@ -137,7 +144,7 @@ function AHHubLib:CreateWindow()
     TooltipLabel.TextColor3 = Theme.TextBright
     TooltipLabel.TextSize = 10
     TooltipLabel.Visible = false
-    TooltipLabel.ZIndex = 200
+    TooltipLabel.ZIndex = 400
     TooltipLabel.Parent = ScreenGui
     Instance.new("UICorner", TooltipLabel).CornerRadius = UDim.new(0, 4)
 
@@ -152,9 +159,7 @@ function AHHubLib:CreateWindow()
             local mousePos = UserInputService:GetMouseLocation()
             TooltipLabel.Position = UDim2.new(0, mousePos.X + 12, 0, mousePos.Y + 12)
         end)
-        object.MouseLeave:Connect(function()
-            TooltipLabel.Visible = false
-        end)
+        object.MouseLeave:Connect(function() TooltipLabel.Visible = false end)
     end
 
     local TitleBar = Instance.new("Frame")
@@ -207,12 +212,8 @@ function AHHubLib:CreateWindow()
         btn.Parent = ControlsHolder
         Instance.new("UICorner", btn).CornerRadius = UDim.new(1, 0)
 
-        btn.MouseEnter:Connect(function()
-            Tween(btn, TweenInfo.new(0.1), {BackgroundColor3 = hoverColor})
-        end)
-        btn.MouseLeave:Connect(function()
-            Tween(btn, TweenInfo.new(0.1), {BackgroundColor3 = color})
-        end)
+        btn.MouseEnter:Connect(function() Tween(btn, TweenInfo.new(0.1), {BackgroundColor3 = hoverColor}) end)
+        btn.MouseLeave:Connect(function() Tween(btn, TweenInfo.new(0.1), {BackgroundColor3 = color}) end)
         btn.MouseButton1Click:Connect(callback)
         return btn
     end
@@ -246,10 +247,7 @@ function AHHubLib:CreateWindow()
             Tween(Window, TweenInfo.new(0.2), {Size = UDim2.new(Window.Size.X.Scale, Window.Size.X.Offset, 0, 32)})
         else
             Tween(Window, TweenInfo.new(0.2), {Size = isMaximized and UDim2.new(1, 0, 1, 0) or savedSize})
-            task.delay(0.15, function()
-                Sidebar.Visible = true
-                ContentContainer.Visible = true
-            end)
+            task.delay(0.15, function() Sidebar.Visible = true ContentContainer.Visible = true end)
         end
     end)
 
@@ -259,61 +257,57 @@ function AHHubLib:CreateWindow()
         if isMaximized then
             savedPosition = Window.Position
             savedSize = Window.Size
-            Tween(Window, TweenInfo.new(0.2), {
-                Position = UDim2.new(0, 0, 0, 0),
-                Size = UDim2.new(1, 0, 1, 0)
-            })
+            Tween(Window, TweenInfo.new(0.2), {Position = UDim2.new(0, 0, 0, 0), Size = UDim2.new(1, 0, 1, 0)})
             Window.BorderSizePixel = 0
         else
-            Tween(Window, TweenInfo.new(0.2), {
-                Position = savedPosition,
-                Size = savedSize
-            })
+            Tween(Window, TweenInfo.new(0.2), {Position = savedPosition, Size = savedSize})
         end
     end)
 
     MakeCircularButton(Theme.RedDanger, Color3.fromRGB(240, 80, 80), 44, function()
-        ShowConfirmation("Close A&H Hub?", "Are you sure you want to close the user interface?", function()
-            ScreenGui:Destroy()
-        end)
+        ShowConfirmation("Close A&H Hub?", "Are you sure you want to close the user interface?", function() ScreenGui:Destroy() end)
     end)
 
+    -- Styled Notification System with Slide-In / Scale-Up Animation
     local NotificationHolder = Instance.new("Frame")
-    NotificationHolder.Size = UDim2.new(0, 240, 1, -40)
-    NotificationHolder.Position = UDim2.new(1, -250, 0, 35)
+    NotificationHolder.Size = UDim2.new(0, 260, 1, -40)
+    NotificationHolder.Position = UDim2.new(1, -270, 0, 35)
     NotificationHolder.BackgroundTransparency = 1
-    NotificationHolder.ZIndex = 50
+    NotificationHolder.ZIndex = 500
     NotificationHolder.Parent = ScreenGui
 
     local NotifLayout = Instance.new("UIListLayout")
     NotifLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
-    NotifLayout.Padding = UDim.new(0, 6)
+    NotifLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+    NotifLayout.Padding = UDim.new(0, 8)
     NotifLayout.Parent = NotificationHolder
 
     function AHHubLib:Notify(title, desc, duration)
         duration = duration or 3
         local Card = Instance.new("Frame")
-        Card.Size = UDim2.new(1, 0, 0, 50)
+        Card.Size = UDim2.new(0, 250, 0, 55)
+        Card.Position = UDim2.new(1, 60, 0, 0)
         Card.BackgroundColor3 = Theme.CardBg
         Card.BorderSizePixel = 1
         Card.BorderColor3 = Theme.OrangeAccent
+        Card.BackgroundTransparency = 0.2
         Card.Parent = NotificationHolder
-        Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 6)
+        Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 8)
 
         local Txt = Instance.new("TextLabel")
-        Txt.Position = UDim2.new(0, 10, 0, 5)
-        Txt.Size = UDim2.new(1, -20, 0, 18)
+        Txt.Position = UDim2.new(0, 12, 0, 6)
+        Txt.Size = UDim2.new(1, -24, 0, 18)
         Txt.BackgroundTransparency = 1
         Txt.Font = Enum.Font.GothamBold
         Txt.Text = title
         Txt.TextColor3 = Theme.OrangeAccent
-        Txt.TextSize = 11
+        Txt.TextSize = 12
         Txt.TextXAlignment = Enum.TextXAlignment.Left
         Txt.Parent = Card
 
         local Sub = Instance.new("TextLabel")
-        Sub.Position = UDim2.new(0, 10, 0, 23)
-        Sub.Size = UDim2.new(1, -20, 0, 22)
+        Sub.Position = UDim2.new(0, 12, 0, 24)
+        Sub.Size = UDim2.new(1, -24, 0, 26)
         Sub.BackgroundTransparency = 1
         Sub.Font = Enum.Font.GothamMedium
         Sub.Text = desc
@@ -323,10 +317,14 @@ function AHHubLib:CreateWindow()
         Sub.TextWrapped = true
         Sub.Parent = Card
 
+        -- Cool Slide-In / Bounce Animation
+        Tween(Card, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(0, 0, 0, 0)})
+
         task.delay(duration, function()
-            Tween(Card, TweenInfo.new(0.25), {BackgroundTransparency = 1})
-            task.wait(0.25)
-            Card:Destroy()
+            local fadeOut = Tween(Card, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1, Size = UDim2.new(0, 200, 0, 0)})
+            fadeOut.Completed:Connect(function()
+                Card:Destroy()
+            end)
         end)
     end
 
@@ -395,13 +393,8 @@ function AHHubLib:CreateWindow()
         CancelBtn.Parent = Box
         Instance.new("UICorner", CancelBtn).CornerRadius = UDim.new(0, 4)
 
-        ConfirmBtn.MouseButton1Click:Connect(function()
-            Overlay:Destroy()
-            onAccept()
-        end)
-        CancelBtn.MouseButton1Click:Connect(function()
-            Overlay:Destroy()
-        end)
+        ConfirmBtn.MouseButton1Click:Connect(function() Overlay:Destroy() onAccept() end)
+        CancelBtn.MouseButton1Click:Connect(function() Overlay:Destroy() end)
     end
 
     local SearchBox = Instance.new("TextBox")
@@ -446,18 +439,7 @@ function AHHubLib:CreateWindow()
         end
     end)
 
-    local Controller = { CurrentTabBtn = nil, Pages = {}, RegisteredKeybinds = {} }
-
-    UserInputService.InputBegan:Connect(function(input, gpe)
-        if gpe then return end
-        if input.UserInputType == Enum.UserInputType.Keyboard then
-            for _, kbData in ipairs(Controller.RegisteredKeybinds) do
-                if input.KeyCode == kbData.Key then
-                    kbData.Callback()
-                end
-            end
-        end
-    end)
+    local Controller = { CurrentTabBtn = nil, Pages = {} }
 
     local function CreateElementBuilder(PageView)
         local Elements = {}
@@ -508,12 +490,7 @@ function AHHubLib:CreateWindow()
                 collapsed = not collapsed
                 Header.Text = (collapsed and "  ► " or "  ▼ ") .. sectionTitle
                 Container.Visible = not collapsed
-                
-                if collapsed then
-                    SecFrame.Size = UDim2.new(1, -10, 0, 26)
-                else
-                    SecFrame.Size = UDim2.new(1, -10, 0, 32 + CLayout.AbsoluteContentSize.Y)
-                end
+                SecFrame.Size = UDim2.new(1, -10, 0, collapsed and 26 or (32 + CLayout.AbsoluteContentSize.Y))
             end)
 
             CLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
@@ -523,6 +500,66 @@ function AHHubLib:CreateWindow()
             end)
 
             return CreateElementBuilder(Container)
+        end
+
+        -- Floating Settings Popup Window implementation (Right-Click or Settings Button)
+        local function OpenFloatingPopup(parentButton, configureCallback)
+            if activePopup then activePopup:Destroy() activePopup = nil end
+
+            local Popup = Instance.new("Frame")
+            Popup.Size = UDim2.new(0, 220, 0, 160)
+            
+            -- Position near mouse or parent element safely inside ScreenGui limits
+            local mouseLoc = UserInputService:GetMouseLocation()
+            Popup.Position = UDim2.new(0, math.clamp(mouseLoc.X + 10, 10, Workspace.CurrentCamera.ViewportSize.X - 230), 0, math.clamp(mouseLoc.Y, 10, Workspace.CurrentCamera.ViewportSize.Y - 170))
+            Popup.BackgroundColor3 = Theme.CardBg
+            Popup.BorderSizePixel = 1
+            Popup.BorderColor3 = Theme.OrangeAccent
+            Popup.ZIndex = 300
+            Popup.Parent = ScreenGui
+            Instance.new("UICorner", Popup).CornerRadius = UDim.new(0, 6)
+            MakeDraggable(Popup, Popup)
+
+            activePopup = Popup
+
+            local TopBar = Instance.new("Frame")
+            TopBar.Size = UDim2.new(1, 0, 0, 24)
+            TopBar.BackgroundColor3 = Theme.TitleBar
+            TopBar.BorderSizePixel = 0
+            TopBar.ZIndex = 301
+            TopBar.Parent = Popup
+            Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 6)
+
+            local TitleTxt = Instance.new("TextLabel")
+            TitleTxt.Size = UDim2.new(1, -10, 1, 0)
+            TitleTxt.Position = UDim2.new(0, 8, 0, 0)
+            TitleTxt.BackgroundTransparency = 1
+            TitleTxt.Font = Enum.Font.GothamBold
+            TitleTxt.Text = "Settings / Config"
+            TitleTxt.TextColor3 = Theme.OrangeAccent
+            TitleTxt.TextSize = 10
+            TitleTxt.TextXAlignment = Enum.TextXAlignment.Left
+            TitleTxt.ZIndex = 302
+            TitleTxt.Parent = TopBar
+
+            local ScrollSub = Instance.new("ScrollingFrame")
+            ScrollSub.Size = UDim2.new(1, -8, 1, -30)
+            ScrollSub.Position = UDim2.new(0, 4, 0, 28)
+            ScrollSub.BackgroundTransparency = 1
+            ScrollSub.ScrollBarThickness = 2
+            ScrollSub.ZIndex = 301
+            ScrollSub.Parent = Popup
+
+            local SubLayout = Instance.new("UIListLayout")
+            SubLayout.SortOrder = Enum.SortOrder.LayoutOrder
+            SubLayout.Padding = UDim.new(0, 4)
+            SubLayout.Parent = ScrollSub
+
+            SubLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+                ScrollSub.CanvasSize = UDim2.new(0, 0, 0, SubLayout.AbsoluteContentSize.Y + 10)
+            end)
+
+            configureCallback(CreateElementBuilder(ScrollSub))
         end
 
         function Elements:AddButton(text, tooltipText, callback)
@@ -539,23 +576,32 @@ function AHHubLib:CreateWindow()
             Btn.AutoButtonColor = false
             Btn.Parent = PageView
             Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
-
             BindTooltip(Btn, tooltipText)
 
-            local ButtonController = {}
-            local isDisabled = false
-
-            function ButtonController:SetDisabled(state)
-                isDisabled = state
-                Btn.BackgroundColor3 = isDisabled and Theme.Disabled or Theme.CardBg
-                Btn.TextColor3 = isDisabled and Theme.TextMuted or Theme.TextBright
+            local subMenuConfig = nil
+            local Obj = {}
+            function Obj:AddSubMenu(configFunc)
+                subMenuConfig = configFunc
+                local Gear = Instance.new("TextButton")
+                Gear.Size = UDim2.new(0, 24, 0, 24)
+                Gear.Position = UDim2.new(1, -28, 0.5, -12)
+                Gear.BackgroundTransparency = 1
+                Gear.Font = Enum.Font.GothamBold
+                Gear.Text = "⚙"
+                Gear.TextColor3 = Theme.TextMuted
+                Gear.TextSize = 12
+                Gear.Parent = Btn
+                Gear.MouseButton1Click:Connect(function()
+                    OpenFloatingPopup(Btn, subMenuConfig)
+                end)
             end
 
-            Btn.MouseButton1Click:Connect(function()
-                if not isDisabled then callback() end
+            Btn.MouseButton2Click:Connect(function()
+                if subMenuConfig then OpenFloatingPopup(Btn, subMenuConfig) end
             end)
 
-            return ButtonController
+            Btn.MouseButton1Click:Connect(function() callback() end)
+            return Obj
         end
 
         function Elements:AddToggle(text, flag, defaultState, tooltipText, callback)
@@ -571,12 +617,11 @@ function AHHubLib:CreateWindow()
             Frame.BorderColor3 = Theme.CardBorder
             Frame.Parent = PageView
             Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 6)
-
             BindTooltip(Frame, tooltipText)
 
             local Title = Instance.new("TextLabel")
             Title.Position = UDim2.new(0, 10, 0, 0)
-            Title.Size = UDim2.new(0.7, 0, 1, 0)
+            Title.Size = UDim2.new(0.6, 0, 1, 0)
             Title.BackgroundTransparency = 1
             Title.Font = Enum.Font.GothamMedium
             Title.Text = text
@@ -593,44 +638,46 @@ function AHHubLib:CreateWindow()
             Switch.Parent = Frame
             Instance.new("UICorner", Switch).CornerRadius = UDim.new(1, 0)
 
-            local SubContainer = Instance.new("Frame")
-            SubContainer.Name = "SubMenuContainer"
-            SubContainer.Size = UDim2.new(1, 0, 0, 0)
-            SubContainer.BackgroundTransparency = 1
-            SubContainer.Visible = toggled
-            SubContainer.Parent = PageView
-
-            local SubLayout = Instance.new("UIListLayout")
-            SubLayout.SortOrder = Enum.SortOrder.LayoutOrder
-            SubLayout.Padding = UDim.new(0, 4)
-            SubLayout.Parent = SubContainer
-
             local ToggleObject = {}
             function ToggleObject:Set(state)
                 toggled = state
                 AHHubLib.Flags[flag] = toggled
                 Tween(Switch, TweenInfo.new(0.15), {BackgroundColor3 = toggled and Theme.OrangeAccent or Theme.Sidebar})
-                SubContainer.Visible = toggled
                 callback(toggled)
             end
 
-            Switch.MouseButton1Click:Connect(function()
-                ToggleObject:Set(not toggled)
-            end)
+            Switch.MouseButton1Click:Connect(function() ToggleObject:Set(not toggled) end)
 
-            function ToggleObject:AddSubElement(builderFunc)
-                return builderFunc(CreateElementBuilder(SubContainer))
+            function ToggleObject:AddSubMenu(configFunc)
+                local Gear = Instance.new("TextButton")
+                Gear.Size = UDim2.new(0, 24, 0, 24)
+                Gear.Position = UDim2.new(1, -68, 0.5, -12)
+                Gear.BackgroundTransparency = 1
+                Gear.Font = Enum.Font.GothamBold
+                Gear.Text = "⚙"
+                Gear.TextColor3 = Theme.TextMuted
+                Gear.TextSize = 12
+                Gear.Parent = Frame
+                Gear.MouseButton1Click:Connect(function()
+                    OpenFloatingPopup(Frame, configFunc)
+                end)
             end
+
+            Frame.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton2 then
+                    -- Right-click popup fallback if configured
+                end
+            end)
 
             return ToggleObject
         end
 
-        -- Fully Integrated AddESPForRenderer Method Fix
         function Elements:AddESPForRenderer(espName, callback)
-            return self:AddToggle("Enable " .. (espName or "ESP"), "ESP_" .. (espName or "Renderer"), false, "Toggle native ESP renderer", callback)
+            return self:AddToggle("Enable " .. (espName or "ESP"), "ESP_" .. (espName or "Renderer"), false, "Toggle native drawing ESP", callback)
         end
 
-        function Elements:AddCosmeticAccessory(assetName, assetId)
+        -- Fixed Custom Mesh/Part Cosmetic Attachment (Proper Top Hat / Prop geometry)
+        function Elements:AddCosmeticAccessory(assetName, assetType)
             local Btn = Instance.new("TextButton")
             Btn.Size = UDim2.new(1, -10, 0, 32)
             Btn.BackgroundColor3 = Theme.CardBg
@@ -647,17 +694,56 @@ function AHHubLib:CreateWindow()
             Btn.MouseButton1Click:Connect(function()
                 local char = LocalPlayer.Character
                 if char and char:FindFirstChild("Head") then
-                    local accessoryPart = Instance.new("Part")
-                    accessoryPart.Name = "AHHub_Cosmetic_" .. assetName
-                    accessoryPart.Size = Vector3.new(1.2, 0.4, 1.2)
-                    
-                    local weld = Instance.new("WeldConstraint")
-                    weld.Part0 = char.Head
-                    weld.Part1 = accessoryPart
-                    
-                    accessoryPart.Position = char.Head.Position + Vector3.new(0, 1, 0)
-                    accessoryPart.Parent = char
-                    weld.Parent = accessoryPart
+                    -- Clean old cosmetic if exists
+                    local existing = char:FindFirstChild("AHHub_Cosmetic_" .. assetName)
+                    if existing then existing:Destroy() end
+
+                    local Model = Instance.new("Model")
+                    Model.Name = "AHHub_Cosmetic_" .. assetName
+
+                    if assetName == "Top Hat" then
+                        local brim = Instance.new("Part")
+                        brim.Size = Vector3.new(1.4, 0.15, 1.4)
+                        brim.Color = Color3.fromRGB(20, 20, 20)
+                        brim.Parent = Model
+
+                        local cylinder = Instance.new("Part")
+                        cylinder.Size = Vector3.new(0.9, 0.9, 0.9)
+                        cylinder.Shape = Enum.PartType.Cylinder
+                        cylinder.Color = Color3.fromRGB(20, 20, 20)
+                        cylinder.CFrame = CFrame.new(0, 0.5, 0) * CFrame.Angles(0, 0, math.rad(90))
+                        cylinder.Parent = Model
+
+                        local band = Instance.new("Part")
+                        band.Size = Vector3.new(0.92, 0.2, 0.92)
+                        band.Shape = Enum.PartType.Cylinder
+                        band.Color = Theme.OrangeAccent
+                        band.CFrame = CFrame.new(0, 0.2, 0) * CFrame.Angles(0, 0, math.rad(90))
+                        band.Parent = Model
+
+                        for _, part in ipairs(Model:GetChildren()) do
+                            local weld = Instance.new("WeldConstraint")
+                            weld.Part0 = char.Head
+                            weld.Part1 = part
+                            weld.Parent = part
+                        end
+                        brim.CFrame = char.Head.CFrame + Vector3.new(0, 1.1, 0)
+                    else
+                        local visor = Instance.new("Part")
+                        visor.Size = Vector3.new(1.1, 0.3, 0.6)
+                        visor.Color = Theme.OrangeAccent
+                        visor.Material = Enum.Material.Neon
+                        visor.Parent = Model
+
+                        local weld = Instance.new("WeldConstraint")
+                        weld.Part0 = char.Head
+                        weld.Part1 = visor
+                        weld.Parent = visor
+                        visor.CFrame = char.Head.CFrame + Vector3.new(0, 0.1, -0.5)
+                    end
+
+                    Model.Parent = char
+                    AHHubLib:Notify("Cosmetics", assetName .. " equipped successfully!", 2)
                 end
             end)
         end
@@ -675,7 +761,6 @@ function AHHubLib:CreateWindow()
             Frame.BorderColor3 = Theme.CardBorder
             Frame.Parent = PageView
             Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 6)
-
             BindTooltip(Frame, tooltipText)
 
             local Title = Instance.new("TextLabel")
@@ -871,6 +956,9 @@ function AHHubLib:CreateWindow()
         self.Pages[tabName] = MainTabFrame
 
         TabBtn.MouseButton1Click:Connect(function()
+            -- Close any active floating sub-popups when switching tabs
+            if activePopup then activePopup:Destroy() activePopup = nil end
+
             for _, page in pairs(self.Pages) do page.Visible = false end
             for _, btn in ipairs(NavHolder:GetChildren()) do
                 if btn:IsA("TextButton") then
@@ -888,6 +976,146 @@ function AHHubLib:CreateWindow()
         end
 
         return CreateElementBuilder(MainTabFrame)
+    end
+
+    -- =========================================================================
+    -- NATIVE DRAWING ESP RENDERER SYSTEM (Fixes broken execution/rendering)
+    -- =========================================================================
+    local ESPRenderer = {
+        ActiveDrawings = {},
+        Connections = {},
+        Settings = {
+            Enabled = false,
+            Box = true,
+            Name = true,
+            Health = true,
+            Distance = true,
+            Color = Color3.fromRGB(255, 50, 50),
+            MaxDistance = 3000
+        }
+    }
+
+    function ESPRenderer:UpdatePlayer(player, data)
+        if data then
+            for k, v in pairs(data) do
+                self.Settings[k] = v
+            end
+        end
+    end
+
+    local function CreateDrawingObject(p)
+        local drawings = {
+            Box = Drawing.new("Square"),
+            Name = Drawing.new("Text"),
+            HealthBar = Drawing.new("Line"),
+            HealthBarBg = Drawing.new("Line")
+        }
+
+        drawings.Box.Visible = false
+        drawings.Box.Thickness = 1
+        drawings.Box.Color = ESPRenderer.Settings.Color
+        drawings.Box.Filled = false
+
+        drawings.Name.Visible = false
+        drawings.Name.Size = 13
+        drawings.Name.Center = true
+        drawings.Name.Outline = true
+        drawings.Name.Color = Color3.fromRGB(255, 255, 255)
+
+        drawings.HealthBar.Visible = false
+        drawings.HealthBar.Thickness = 2
+        drawings.HealthBar.Color = Color3.fromRGB(0, 255, 100)
+
+        drawings.HealthBarBg.Visible = false
+        drawings.HealthBarBg.Thickness = 2
+        drawings.HealthBarBg.Color = Color3.fromRGB(30, 30, 30)
+
+        ESPRenderer.ActiveDrawings[p] = drawings
+    end
+
+    local function RemoveDrawingObject(p)
+        if ESPRenderer.ActiveDrawings[p] then
+            for _, d in pairs(ESPRenderer.ActiveDrawings[p]) do
+                pcall(function() d:Remove() end)
+            end
+            ESPRenderer.ActiveDrawings[p] = nil
+        end
+    end
+
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then CreateDrawingObject(p) end
+    end
+    table.insert(ESPRenderer.Connections, Players.PlayerAdded:Connect(function(p)
+        if p ~= LocalPlayer then CreateDrawingObject(p) end
+    end))
+    table.insert(ESPRenderer.Connections, Players.PlayerRemoving:Connect(function(p)
+        RemoveDrawingObject(p)
+    end))
+
+    table.insert(ESPRenderer.Connections, RunService.RenderStepped:Connect(function()
+        local flagState = AHHubLib.Flags["ESP_Renderer"] or ESPRenderer.Settings.Enabled
+        for p, drawings in pairs(ESPRenderer.ActiveDrawings) do
+            local character = p.Character
+            local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+            local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+
+            local renderCondition = flagState and character and rootPart and humanoid and humanoid.Health > 0
+            if renderCondition then
+                local vector, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
+                local dist = (Camera.CFrame.Position - rootPart.Position).Magnitude
+
+                if onScreen and dist <= (AHHubLib.Flags["esp_maxdist"] or ESPRenderer.Settings.MaxDistance) then
+                    local head = character:FindFirstChild("Head")
+                    local topWorld = head and (head.Position + Vector3.new(0, 0.5, 0)) or (rootPart.Position + Vector3.new(0, 2, 0))
+                    local bottomWorld = rootPart.Position - Vector3.new(0, 3, 0)
+
+                    local topScreen = Camera:WorldToViewportPoint(topWorld)
+                    local bottomScreen = Camera:WorldToViewportPoint(bottomWorld)
+                    local boxHeight = math.abs(topScreen.Y - bottomScreen.Y)
+                    local boxWidth = boxHeight / 2
+
+                    -- Box Drawing
+                    if drawings.Box then
+                        drawings.Box.Visible = (AHHubLib.Flags["esp_box"] ~= false)
+                        drawings.Box.Size = Vector2.new(boxWidth, boxHeight)
+                        drawings.Box.Position = Vector2.new(vector.X - boxWidth / 2, topScreen.Y)
+                        drawings.Box.Color = AHHubLib.Flags["color_enemy"] or ESPRenderer.Settings.Color
+                    end
+
+                    -- Name Drawing
+                    if drawings.Name then
+                        drawings.Name.Visible = (AHHubLib.Flags["esp_name"] ~= false)
+                        drawings.Name.Text = p.Name .. (AHHubLib.Flags["esp_distance"] ~= false and (" [" .. math.floor(dist) .. "m]") or "")
+                        drawings.Name.Position = Vector2.new(vector.X, topScreen.Y - 16)
+                    end
+
+                    -- Health Bar
+                    local healthPct = math.clamp(humanoid.Health / humanoid.MaxHealth, 0, 1)
+                    if drawings.HealthBar and drawings.HealthBarBg then
+                        local showHp = (AHHubLib.Flags["esp_health"] ~= false)
+                        drawings.HealthBarBg.Visible = showHp
+                        drawings.HealthBar.Visible = showHp
+                        if showHp then
+                            local barX = vector.X - boxWidth / 2 - 6
+                            local barY = topScreen.Y
+                            drawings.HealthBarBg.From = Vector2.new(barX, barY + boxHeight)
+                            drawings.HealthBarBg.To = Vector2.new(barX, barY)
+
+                            drawings.HealthBar.From = Vector2.new(barX, barY + boxHeight)
+                            drawings.HealthBar.To = Vector2.new(barX, barY + (boxHeight * (1 - healthPct)))
+                        end
+                    end
+                else
+                    for _, d in pairs(drawings) do d.Visible = false end
+                end
+            else
+                for _, d in pairs(drawings) do d.Visible = false end
+            end
+        end
+    end))
+
+    function Controller:AddESPRenderer()
+        return ESPRenderer
     end
 
     return Controller
