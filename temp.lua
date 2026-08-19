@@ -3,7 +3,7 @@
 -- =========================================================================
 
 local AHHubLib = {
-    Version = "1.9.29",
+    Version = "1.9.235",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -869,7 +869,6 @@ function AHHubLib:CreateWindow()
             GearBtn.ZIndex = 805
             GearBtn.Parent = Frame
 
-            -- Automatically adjust and place the settings gear closely right next to the dynamic text number
             local function updateGearPosition()
                 local textWidth = ValLbl.TextBounds.X
                 ValLbl.Size = UDim2.new(0, textWidth + 5, 0, 18)
@@ -1143,7 +1142,7 @@ function AHHubLib:CreateWindow()
         end
 
         function Elements:AddCosmeticAccessory(name, id, callback)
-            return Elements:AddButton(name, "Catalog Asset ID: " + tostring(id), callback)
+            return Elements:AddButton(name, "Catalog Asset ID: " .. tostring(id), callback)
         end
 
         return Elements
