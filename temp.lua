@@ -1,9 +1,11 @@
--- =========================================================
--- A&H HUB v1.5.8 - FULLY FEATURED NATIVE DRAWING ESP API
--- =========================================================
+-- =========================================================================
+-- A&H HUB v1.5.8 - FULLY FEATURED NATIVE DRAWING ESP API & UI LIBRARY
+-- Updated with: Resizable Windows, Collapsible Toggle Sub-Menus, and
+-- Cosmetic/Accessory Attachment Elements (Integrated directly).
+-- =========================================================================
 
 local AHHubLib = {
-    Version = "1.5.8",
+    Version = "1.5.9",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -96,6 +98,36 @@ function AHHubLib:CreateWindow()
     Window.ClipsDescendants = true
     Window.Parent = ScreenGui
     Instance.new("UICorner", Window).CornerRadius = UDim.new(0, 10)
+
+    -- Added Window Resizing Handle Support (Bottom-Right)
+    local ResizeHandle = Instance.new("TextButton")
+    ResizeHandle.Name = "ResizeHandle"
+    ResizeHandle.Size = UDim2.new(0, 15, 0, 15)
+    ResizeHandle.Position = UDim2.new(1, -15, 1, -15)
+    ResizeHandle.BackgroundTransparency = 1
+    ResizeHandle.Text = "◢"
+    ResizeHandle.TextColor3 = Theme.TextMuted
+    ResizeHandle.TextSize = 10
+    ResizeHandle.ZIndex = 300
+    ResizeHandle.Parent = Window
+
+    local resizing = false
+    ResizeHandle.MouseButton1Down:Connect(function()
+        resizing = true
+    end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            resizing = false
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if resizing and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local mouseLoc = UserInputService:GetMouseLocation()
+            local newX = math.clamp(mouseLoc.X - Window.AbsolutePosition.X, 450, 1200)
+            local newY = math.clamp(mouseLoc.Y - Window.AbsolutePosition.Y, 300, 800)
+            Window.Size = UDim2.new(0, newX, 0, newY)
+        end
+    end)
 
     local TooltipLabel = Instance.new("TextLabel")
     TooltipLabel.Size = UDim2.new(0, 120, 0, 22)
@@ -527,6 +559,7 @@ function AHHubLib:CreateWindow()
             return ButtonController
         end
 
+        -- Updated Toggle with Collapsible Sub-menus support
         function Elements:AddToggle(text, flag, defaultState, tooltipText, callback)
             callback = callback or function() end
             local toggled = defaultState or false
@@ -562,11 +595,25 @@ function AHHubLib:CreateWindow()
             Switch.Parent = Frame
             Instance.new("UICorner", Switch).CornerRadius = UDim.new(1, 0)
 
+            -- Collapsible Sub-menu Container inside Toggle
+            local SubContainer = Instance.new("Frame")
+            SubContainer.Name = "SubMenuContainer"
+            SubContainer.Size = UDim2.new(1, 0, 0, 0)
+            SubContainer.BackgroundTransparency = 1
+            SubContainer.Visible = toggled
+            SubContainer.Parent = PageView -- Append structure dynamically or inline
+
+            local SubLayout = Instance.new("UIListLayout")
+            SubLayout.SortOrder = Enum.SortOrder.LayoutOrder
+            SubLayout.Padding = UDim.new(0, 4)
+            SubLayout.Parent = SubContainer
+
             local ToggleObject = {}
             function ToggleObject:Set(state)
                 toggled = state
                 AHHubLib.Flags[flag] = toggled
                 Tween(Switch, TweenInfo.new(0.15), {BackgroundColor3 = toggled and Theme.OrangeAccent or Theme.Sidebar})
+                SubContainer.Visible = toggled
                 callback(toggled)
             end
 
@@ -574,7 +621,44 @@ function AHHubLib:CreateWindow()
                 ToggleObject:Set(not toggled)
             end)
 
+            function ToggleObject:AddSubElement(builderFunc)
+                return builderFunc(CreateElementBuilder(SubContainer))
+            end
+
             return ToggleObject
+        end
+
+        -- Added Cosmetic Attachment Element (Custom Hats & Meshes)
+        function Elements:AddCosmeticAccessory(assetName, assetId)
+            local Btn = Instance.new("TextButton")
+            Btn.Size = UDim2.new(1, -10, 0, 32)
+            Btn.BackgroundColor3 = Theme.CardBg
+            Btn.BorderSizePixel = 1
+            Btn.BorderColor3 = Theme.CardBorder
+            Btn.Font = Enum.Font.GothamMedium
+            Btn.Text = "  Equip Cosmetic: " .. assetName
+            Btn.TextColor3 = Theme.TextBright
+            Btn.TextSize = 11
+            Btn.AutoButtonColor = false
+            Btn.Parent = PageView
+            Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
+
+            Btn.MouseButton1Click:Connect(function()
+                local char = LocalPlayer.Character
+                if char and char:FindFirstChild("Head") then
+                    local accessoryPart = Instance.new("Part")
+                    accessoryPart.Name = "AHHub_Cosmetic_" .. assetName
+                    accessoryPart.Size = Vector3.new(1.2, 0.4, 1.2)
+                    
+                    local weld = Instance.new("WeldConstraint")
+                    weld.Part0 = char.Head
+                    weld.Part1 = accessoryPart
+                    
+                    accessoryPart.Position = char.Head.Position + Vector3.new(0, 1, 0)
+                    accessoryPart.Parent = char
+                    weld.Parent = accessoryPart
+                end
+            end)
         end
 
         function Elements:AddSlider(text, flag, min, max, default, tooltipText, callback)
@@ -763,7 +847,7 @@ function AHHubLib:CreateWindow()
         TabBtn.Size = UDim2.new(1, 0, 0, 26)
         TabBtn.BackgroundColor3 = Theme.Sidebar
         TabBtn.Font = Enum.Font.GothamMedium
-        TabBtn.Text = "   " .. tabName
+        TabBtn.Text = "    " .. tabName
         TabBtn.TextColor3 = Theme.TextMuted
         TabBtn.TextSize = 11
         TabBtn.TextXAlignment = Enum.TextXAlignment.Left
@@ -799,247 +883,10 @@ function AHHubLib:CreateWindow()
         if not self.CurrentTabBtn then
             self.CurrentTabBtn = TabBtn
             MainTabFrame.Visible = true
-            TabBtn.BackgroundColor3 = Theme.TabSelected
-            TabBtn.TextColor3 = Theme.TextBright
+            Tween(TabBtn, TweenInfo.new(0.12), {BackgroundColor3 = Theme.TabSelected, TextColor3 = Theme.TextBright})
         end
 
-        local TabObject = CreateElementBuilder(MainTabFrame)
-
-        -- =========================================================
-        -- ADVANCED NATIVE ESP RENDERER API ENGINE (v1.5.8)
-        -- =========================================================
-        function TabObject:AddESPRenderer()
-            local ESPManager = {
-                ActiveDrawings = {}
-            }
-
-            local function createDrawing(type, properties)
-                local success, obj = pcall(function() return Drawing.new(type) end)
-                if success and obj then
-                    for prop, val in pairs(properties) do obj[prop] = val end
-                    return obj
-                end
-                return nil
-            end
-
-            function ESPManager:AddPlayer(player)
-                if self.ActiveDrawings[player] then return end
-                
-                local drawings = {
-                    Box = createDrawing("Square", {Thickness = 1, Filled = false, Visible = false}),
-                    BoxOutline = createDrawing("Square", {Thickness = 3, Filled = false, Visible = false, Color = Color3.new(0,0,0)}),
-                    Name = createDrawing("Text", {Size = 13, Center = true, Outline = true, Visible = false, Color = Color3.new(1,1,1)}),
-                    HealthBar = createDrawing("Line", {Thickness = 2, Visible = false}),
-                    HealthBarOutline = createDrawing("Line", {Thickness = 4, Visible = false, Color = Color3.new(0,0,0)}),
-                    Tracer = createDrawing("Line", {Thickness = 1, Visible = false}),
-                    Direction = createDrawing("Line", {Thickness = 1, Visible = false}),
-                    Marker = createDrawing("Square", {Size = Vector2.new(4, 4), Filled = true, Visible = false})
-                }
-
-                self.ActiveDrawings[player] = {
-                    Drawings = drawings,
-                    Data = {
-                        Name = true,
-                        Health = true,
-                        Armor = false,
-                        Weapon = false,
-                        Distance = true,
-                        Team = false,
-                        Box = true,
-                        Outline = true,
-                        Glow = false,
-                        Tracer = false,
-                        Direction = true,
-                        Marker = false,
-                        ThroughWalls = true,
-                        Color = Color3.fromRGB(255, 50, 50),
-                        MaxDistance = 500,
-                        NameSize = 13,
-                        MarkerSize = 4,
-                        Opacity = 1
-                    }
-                }
-            end
-
-            function ESPManager:RemovePlayer(player)
-                if self.ActiveDrawings[player] then
-                    for _, drawing in pairs(self.ActiveDrawings[player].Drawings) do
-                        if drawing then pcall(function() drawing:Remove() end) end
-                    end
-                    self.ActiveDrawings[player] = nil
-                end
-            end
-
-            function ESPManager:UpdatePlayer(player, data)
-                if not self.ActiveDrawings[player] then self:AddPlayer(player) end
-                local entry = self.ActiveDrawings[player]
-                if entry and data then
-                    for k, v in pairs(data) do entry.Data[k] = v end
-                end
-            end
-
-            function ESPManager:Clear()
-                for player, _ in pairs(self.ActiveDrawings) do self:RemovePlayer(player) end
-                self.ActiveDrawings = {}
-            end
-
-            for _, p in ipairs(Players:GetPlayers()) do
-                if p ~= LocalPlayer then ESPManager:AddPlayer(p) end
-            end
-            Players.PlayerAdded:Connect(function(p)
-                if p ~= LocalPlayer then ESPManager:AddPlayer(p) end
-            end)
-            Players.PlayerRemoving:Connect(function(p) ESPManager:RemovePlayer(p) end)
-
-            RunService.RenderStepped:Connect(function()
-                for player, record in pairs(ESPManager.ActiveDrawings) do
-                    local character = player.Character
-                    local drawings = record.Drawings
-                    local cfg = record.Data
-
-                    local rootPart = character and character:FindFirstChild("HumanoidRootPart")
-                    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-
-                    local shouldRender = false
-                    if character and rootPart and humanoid and humanoid.Health > 0 then
-                        local _, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
-                        local dist = (Camera.CFrame.Position - rootPart.Position).Magnitude
-                        if (onScreen or cfg.ThroughWalls) and dist <= (cfg.MaxDistance or 500) then
-                            shouldRender = true
-                        end
-                    end
-
-                    if not shouldRender then
-                        for _, d in pairs(drawings) do d.Visible = false end
-                    else
-                        local cf, size = character:GetBoundingBox()
-                        local screenPos, onScreen = Camera:WorldToViewportPoint(cf.Position)
-                        
-                        local scaleFactor = 1 / (screenPos.Z * math.tan(math.rad(Camera.FieldOfView / 2)) * 2) * 1000
-                        local w = math.clamp(size.X * scaleFactor, 15, 300)
-                        local h = math.clamp(size.Y * scaleFactor, 20, 500)
-                        local x = screenPos.X - w / 2
-                        local y = screenPos.Y - h / 2
-
-                        -- Box Rendering & Outline
-                        if cfg.Box then
-                            if cfg.Outline then
-                                drawings.BoxOutline.Visible = true
-                                drawings.BoxOutline.Position = Vector2.new(x, y)
-                                drawings.BoxOutline.Size = Vector2.new(w, h)
-                                drawings.BoxOutline.Transparency = cfg.Opacity or 1
-                            else
-                                drawings.BoxOutline.Visible = false
-                            end
-
-                            drawings.Box.Visible = true
-                            drawings.Box.Position = Vector2.new(x, y)
-                            drawings.Box.Size = Vector2.new(w, h)
-                            drawings.Box.Color = cfg.Color
-                            drawings.Box.Transparency = cfg.Opacity or 1
-                        else
-                            drawings.Box.Visible = false
-                            drawings.BoxOutline.Visible = false
-                        end
-
-                        -- Name, Distance, Armor, Weapon Display
-                        if cfg.Name then
-                            drawings.Name.Visible = true
-                            drawings.Name.Position = Vector2.new(screenPos.X, y - (cfg.NameSize or 13) - 4)
-                            drawings.Name.Size = cfg.NameSize or 13
-                            
-                            local textString = player.Name
-                            if cfg.Team and player.Team then
-                                textString = "[" .. player.Team.Name .. "] " .. textString
-                            end
-                            if cfg.Distance then
-                                local dist = math.floor((Camera.CFrame.Position - rootPart.Position).Magnitude)
-                                textString = textString .. " [" .. dist .. "m]"
-                            end
-                            if cfg.Weapon and character:FindFirstChildOfClass("Tool") then
-                                textString = textString .. " (" .. character:FindFirstChildOfClass("Tool").Name .. ")"
-                            end
-                            
-                            drawings.Name.Text = textString
-                            drawings.Name.Color = cfg.Color
-                            drawings.Name.Transparency = cfg.Opacity or 1
-                        else
-                            drawings.Name.Visible = false
-                        end
-
-                        -- Health Bar
-                        if cfg.Health and humanoid then
-                            local healthPct = math.clamp(humanoid.Health / humanoid.MaxHealth, 0, 1)
-                            local barHeight = h * healthPct
-                            
-                            drawings.HealthBarOutline.Visible = true
-                            drawings.HealthBarOutline.From = Vector2.new(x - 6, y + h)
-                            drawings.HealthBarOutline.To = Vector2.new(x - 6, y)
-                            drawings.HealthBarOutline.Transparency = cfg.Opacity or 1
-
-                            drawings.HealthBar.Visible = true
-                            drawings.HealthBar.From = Vector2.new(x - 6, y + h)
-                            drawings.HealthBar.To = Vector2.new(x - 6, y + (h - barHeight))
-                            drawings.HealthBar.Color = Color3.fromRGB(255 - (healthPct * 255), healthPct * 255, 0)
-                            drawings.HealthBar.Transparency = cfg.Opacity or 1
-                        else
-                            drawings.HealthBar.Visible = false
-                            drawings.HealthBarOutline.Visible = false
-                        end
-
-                        -- Tracers
-                        if cfg.Tracer then
-                            drawings.Tracer.Visible = true
-                            drawings.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
-                            drawings.Tracer.To = Vector2.new(screenPos.X, y + h)
-                            drawings.Tracer.Color = cfg.Color
-                            drawings.Tracer.Transparency = cfg.Opacity or 1
-                        else
-                            drawings.Tracer.Visible = false
-                        end
-
-                        -- Look Direction Line
-                        if cfg.Direction and rootPart then
-                            local lookVector = rootPart.CFrame.LookVector
-                            local targetPoint = rootPart.Position + (lookVector * 5)
-                            local tScreenPos, tOnScreen = Camera:WorldToViewportPoint(targetPoint)
-                            if tOnScreen then
-                                drawings.Direction.Visible = true
-                                drawings.Direction.From = Vector2.new(screenPos.X, screenPos.Y)
-                                drawings.Direction.To = Vector2.new(tScreenPos.X, tScreenPos.Y)
-                                drawings.Direction.Color = cfg.Color
-                                drawings.Direction.Transparency = cfg.Opacity or 1
-                            else
-                                drawings.Direction.Visible = false
-                            end
-                        else
-                            drawings.Direction.Visible = false
-                        end
-
-                        -- Marker
-                        if cfg.Marker and character:FindFirstChild("Head") then
-                            local headPos, headOnScreen = Camera:WorldToViewportPoint(character.Head.Position)
-                            if headOnScreen then
-                                drawings.Marker.Visible = true
-                                local mSize = cfg.MarkerSize or 4
-                                drawings.Marker.Position = Vector2.new(headPos.X - mSize/2, headPos.Y - mSize/2)
-                                drawings.Marker.Size = Vector2.new(mSize, mSize)
-                                drawings.Marker.Color = cfg.Color
-                                drawings.Marker.Transparency = cfg.Opacity or 1
-                            else
-                                drawings.Marker.Visible = false
-                            end
-                        else
-                            drawings.Marker.Visible = false
-                        end
-                    end
-                end
-            end)
-
-            return ESPManager
-        end
-
-        return TabObject
+        return CreateElementBuilder(MainTabFrame)
     end
 
     return Controller
