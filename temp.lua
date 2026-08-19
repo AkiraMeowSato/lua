@@ -1,9 +1,9 @@
 -- =========================================================
--- A&H HUB v1.5.5 - FIXED WINDOW CONTROLS POSITIONING
+-- A&H HUB v1.5.6 - COFFEE LOGO, CIRCULAR CONTROLS & CONFIRMATION
 -- =========================================================
 
 local AHHubLib = {
-    Version = "1.5.5",
+    Version = "1.5.6",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -27,7 +27,9 @@ local Theme = {
     OrangeAccent = Color3.fromRGB(210, 130, 60),
     TabSelected = Color3.fromRGB(55, 40, 32),
     Disabled = Color3.fromRGB(60, 50, 45),
-    RedDanger = Color3.fromRGB(200, 60, 60)
+    RedDanger = Color3.fromRGB(200, 60, 60),
+    YellowWarn = Color3.fromRGB(220, 160, 50),
+    GreenOk = Color3.fromRGB(60, 180, 80)
 }
 
 AHHubLib.Flags = {}
@@ -132,12 +134,25 @@ function AHHubLib:CreateWindow()
     Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 10)
     MakeDraggable(TitleBar, Window)
 
+    -- Cute Coffee Logo / Button on Left
+    local CoffeeLogoBtn = Instance.new("TextButton")
+    CoffeeLogoBtn.Size = UDim2.new(0, 24, 0, 24)
+    CoffeeLogoBtn.Position = UDim2.new(0, 6, 0.5, -12)
+    CoffeeLogoBtn.BackgroundColor3 = Theme.Sidebar
+    CoffeeLogoBtn.Font = Enum.Font.GothamBold
+    CoffeeLogoBtn.Text = "☕"
+    CoffeeLogoBtn.TextSize = 12
+    CoffeeLogoBtn.ZIndex = 12
+    CoffeeLogoBtn.Parent = TitleBar
+    Instance.new("UICorner", CoffeeLogoBtn).CornerRadius = UDim.new(1, 0)
+    BindTooltip(CoffeeLogoBtn, "A&H Hub Icon")
+
     local WindowTitle = Instance.new("TextLabel")
     WindowTitle.Size = UDim2.new(0, 250, 1, 0)
-    WindowTitle.Position = UDim2.new(0, 15, 0, 0)
+    WindowTitle.Position = UDim2.new(0, 36, 0, 0)
     WindowTitle.BackgroundTransparency = 1
     WindowTitle.Font = Enum.Font.GothamBold
-    WindowTitle.Text = "☕ " .. self.Title .. "  •  " .. self.Version
+    WindowTitle.Text = self.Title .. "  •  " .. self.Version
     WindowTitle.TextColor3 = Theme.TextMain
     WindowTitle.TextSize = 12
     WindowTitle.TextXAlignment = Enum.TextXAlignment.Left
@@ -145,27 +160,24 @@ function AHHubLib:CreateWindow()
     WindowTitle.Parent = TitleBar
 
     -- =========================================================
-    -- EXPLICIT WINDOW CONTROLS (CLOSE / MAXIMIZE / MINIMIZE)
+    -- CIRCULAR WINDOW CONTROLS (CLOSE / MAXIMIZE / MINIMIZE)
     -- =========================================================
     local ControlsHolder = Instance.new("Frame")
-    ControlsHolder.Size = UDim2.new(0, 95, 0, 32)
-    ControlsHolder.Position = UDim2.new(1, -100, 0, 0)
+    ControlsHolder.Size = UDim2.new(0, 75, 0, 32)
+    ControlsHolder.Position = UDim2.new(1, -80, 0, 0)
     ControlsHolder.BackgroundTransparency = 1
     ControlsHolder.ZIndex = 15
     ControlsHolder.Parent = TitleBar
 
-    local function MakeWindowButton(text, color, hoverColor, xPos, callback)
+    local function MakeCircularButton(color, hoverColor, xPos, callback)
         local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(0, 26, 0, 22)
-        btn.Position = UDim2.new(0, xPos, 0.5, -11)
+        btn.Size = UDim2.new(0, 16, 0, 16)
+        btn.Position = UDim2.new(0, xPos, 0.5, -8)
         btn.BackgroundColor3 = color
-        btn.Font = Enum.Font.GothamBold
-        btn.Text = text
-        btn.TextColor3 = Theme.TextBright
-        btn.TextSize = 12
+        btn.Text = ""
         btn.ZIndex = 16
         btn.Parent = ControlsHolder
-        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(1, 0)
 
         btn.MouseEnter:Connect(function()
             Tween(btn, TweenInfo.new(0.1), {BackgroundColor3 = hoverColor})
@@ -197,8 +209,11 @@ function AHHubLib:CreateWindow()
     ContentContainer.BackgroundTransparency = 1
     ContentContainer.Parent = Window
 
-    -- Button Logic Definitions
-    MakeWindowButton("—", Theme.Sidebar, Theme.TabSelected, 0, function()
+    -- Confirmation Popup System (Forward Declared)
+    local ShowConfirmation
+
+    -- Minimize Button (Yellow style circle)
+    MakeCircularButton(Theme.YellowWarn, Color3.fromRGB(240, 190, 80), 0, function()
         isMinimized = not isMinimized
         if isMinimized then
             if not isMaximized then savedSize = Window.Size end
@@ -206,7 +221,7 @@ function AHHubLib:CreateWindow()
             ContentContainer.Visible = false
             Tween(Window, TweenInfo.new(0.2), {Size = UDim2.new(Window.Size.X.Scale, Window.Size.X.Offset, 0, 32)})
         else
-            Tween(Window, TweenInfo.new(0.2), {Size = isMaximized and UDim2.new(1, -40, 1, -40) or savedSize})
+            Tween(Window, TweenInfo.new(0.2), {Size = isMaximized and UDim2.new(1, 0, 1, 0) or savedSize})
             task.delay(0.15, function()
                 Sidebar.Visible = true
                 ContentContainer.Visible = true
@@ -214,20 +229,32 @@ function AHHubLib:CreateWindow()
         end
     end)
 
-    MakeWindowButton("□", Theme.Sidebar, Theme.TabSelected, 31, function()
+    -- Maximize Button (Green style circle - Full Screen toggle)
+    MakeCircularButton(Theme.GreenOk, Color3.fromRGB(90, 220, 110), 22, function()
         if isMinimized then return end
         isMaximized = not isMaximized
         if isMaximized then
             savedPosition = Window.Position
             savedSize = Window.Size
-            Tween(Window, TweenInfo.new(0.2), {Position = UDim2.new(0, 20, 0, 20), Size = UDim2.new(1, -40, 1, -40)})
+            Tween(Window, TweenInfo.new(0.2), {
+                Position = UDim2.new(0, 0, 0, 0),
+                Size = UDim2.new(1, 0, 1, 0)
+            })
+            -- Remove corner radius temporarily on full screen for edge-to-edge look
+            Window.BorderSizePixel = 0
         else
-            Tween(Window, TweenInfo.new(0.2), {Position = savedPosition, Size = savedSize})
+            Tween(Window, TweenInfo.new(0.2), {
+                Position = savedPosition,
+                Size = savedSize
+            })
         end
     end)
 
-    MakeWindowButton("✕", Color3.fromRGB(180, 50, 50), Theme.RedDanger, 62, function()
-        ScreenGui:Destroy()
+    -- Close Button (Red style circle with Confirmation popup)
+    MakeCircularButton(Theme.RedDanger, Color3.fromRGB(240, 80, 80), 44, function()
+        ShowConfirmation("Close A&H Hub?", "Are you sure you want to close the user interface?", function()
+            ScreenGui:Destroy()
+        end)
     end)
 
     -- Notifications Holder
@@ -283,13 +310,13 @@ function AHHubLib:CreateWindow()
         end)
     end
 
-    -- Confirmation Popup System
-    local function ShowConfirmation(title, message, onAccept)
+    -- Confirmation Popup System Implementation
+    ShowConfirmation = function(title, message, onAccept)
         local Overlay = Instance.new("Frame")
         Overlay.Size = UDim2.new(1, 0, 1, 0)
         Overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
         Overlay.BackgroundTransparency = 0.5
-        Overlay.ZIndex = 80
+        Overlay.ZIndex = 250
         Overlay.Parent = Window
 
         local Box = Instance.new("Frame")
@@ -298,7 +325,7 @@ function AHHubLib:CreateWindow()
         Box.BackgroundColor3 = Theme.CardBg
         Box.BorderSizePixel = 1
         Box.BorderColor3 = Theme.RedDanger
-        Box.ZIndex = 81
+        Box.ZIndex = 251
         Box.Parent = Overlay
         Instance.new("UICorner", Box).CornerRadius = UDim.new(0, 8)
 
@@ -310,7 +337,7 @@ function AHHubLib:CreateWindow()
         T.Text = title
         T.TextColor3 = Theme.RedDanger
         T.TextSize = 13
-        T.ZIndex = 82
+        T.ZIndex = 252
         T.Parent = Box
 
         local M = Instance.new("TextLabel")
@@ -322,7 +349,7 @@ function AHHubLib:CreateWindow()
         M.TextColor3 = Theme.TextMain
         M.TextSize = 11
         M.TextWrapped = true
-        M.ZIndex = 82
+        M.ZIndex = 252
         M.Parent = Box
 
         local ConfirmBtn = Instance.new("TextButton")
@@ -333,7 +360,7 @@ function AHHubLib:CreateWindow()
         ConfirmBtn.Text = "Confirm"
         ConfirmBtn.TextColor3 = Theme.TextBright
         ConfirmBtn.TextSize = 10
-        ConfirmBtn.ZIndex = 82
+        ConfirmBtn.ZIndex = 252
         ConfirmBtn.Parent = Box
         Instance.new("UICorner", ConfirmBtn).CornerRadius = UDim.new(0, 4)
 
@@ -345,7 +372,7 @@ function AHHubLib:CreateWindow()
         CancelBtn.Text = "Cancel"
         CancelBtn.TextColor3 = Theme.TextMuted
         CancelBtn.TextSize = 10
-        CancelBtn.ZIndex = 82
+        CancelBtn.ZIndex = 252
         CancelBtn.Parent = Box
         Instance.new("UICorner", CancelBtn).CornerRadius = UDim.new(0, 4)
 
