@@ -1,6 +1,6 @@
 -- =========================================================================
 -- CUSTOM LIBRARY (Based on A&H HUB v1.9.11 Features & Mechanics)
--- Restyled to Match the Fatality-style UI Theme & Layout[cite: 1]
+-- Restyled with Fatality UI Theme, Layout, and Button Styles[cite: 1]
 -- =========================================================================
 
 local CustomLib = {
@@ -25,8 +25,8 @@ local Theme = {
     Bg = Color3.fromRGB(15, 12, 25),
     WindowBg = Color3.fromRGB(22, 18, 35),
     Sidebar = Color3.fromRGB(28, 22, 45),
-    CardBg = Color3.fromRGB(35, 28, 55),
-    CardBorder = Color3.fromRGB(60, 48, 90),
+    CardBg = Color3.fromRGB(30, 24, 48),
+    CardBorder = Color3.fromRGB(55, 42, 85),
     TitleBar = Color3.fromRGB(25, 20, 40),
     PopupBg = Color3.fromRGB(40, 32, 65),       
     PopupBtn = Color3.fromRGB(50, 40, 80),      
@@ -34,7 +34,7 @@ local Theme = {
     TextBright = Color3.fromRGB(255, 255, 255),
     TextMain = Color3.fromRGB(220, 210, 240),
     TextMuted = Color3.fromRGB(150, 140, 180),
-    OrangeAccent = Color3.fromRGB(220, 40, 130), -- Magenta/Pink accent matching the interface style
+    OrangeAccent = Color3.fromRGB(220, 40, 130), -- Magenta/Pink accent matching the interface style[cite: 1]
     TabSelected = Color3.fromRGB(45, 35, 75),
     Disabled = Color3.fromRGB(40, 32, 60),
     RedDanger = Color3.fromRGB(200, 60, 60),
@@ -109,13 +109,13 @@ function CustomLib:CreateWindow()
     Window.ClipsDescendants = true
     Window.Parent = ScreenGui
     
-    -- Added glowing gradient border effect similar to the photo's outer aesthetic[cite: 1]
+    -- Glowing outer border matching Fatality aesthetic[cite: 1]
     local WindowStroke = Instance.new("UIStroke")
     WindowStroke.Color = Theme.OrangeAccent
     WindowStroke.Thickness = 1.5
     WindowStroke.Parent = Window
     
-    Instance.new("UICorner", Window).CornerRadius = UDim.new(0, 6)
+    Instance.new("UICorner", Window).CornerRadius = UDim.new(0, 4)
 
     Tween(Window, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
         Size = DefaultSize,
@@ -192,7 +192,7 @@ function CustomLib:CreateWindow()
     TitleBar.BorderSizePixel = 0
     TitleBar.ZIndex = 10
     TitleBar.Parent = Window
-    Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 6)
+    Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 4)
     MakeDraggable(TitleBar, Window)
 
     local WindowTitle = Instance.new("TextLabel")
@@ -235,7 +235,7 @@ function CustomLib:CreateWindow()
     local savedPosition = DefaultPos
     local savedSize = DefaultSize
 
-    -- Top horizontal tab navigation bar layout mimicking Fatality's style[cite: 1]
+    -- Horizontal top tab bar resembling Fatality's primary category navigation[cite: 1]
     local TopNavHolder = Instance.new("ScrollingFrame")
     TopNavHolder.Size = UDim2.new(1, -220, 0, 36)
     TopNavHolder.Position = UDim2.new(0, 110, 0, 0)
@@ -249,7 +249,7 @@ function CustomLib:CreateWindow()
     local TopNavLayout = Instance.new("UIListLayout")
     TopNavLayout.FillDirection = Enum.FillDirection.Horizontal
     TopNavLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    TopNavLayout.Padding = UDim.new(0, 12)
+    TopNavLayout.Padding = UDim.new(0, 16)
     TopNavLayout.Parent = TopNavHolder
 
     local ContentContainer = Instance.new("Frame")
@@ -403,7 +403,7 @@ function CustomLib:CreateWindow()
         Box.BorderColor3 = Theme.RedDanger
         Box.ZIndex = 251
         Box.Parent = Overlay
-        Instance.new("UICorner", Box).CornerRadius = UDim.new(0, 6)
+        Instance.new("UICorner", Box).CornerRadius = UDim.new(0, 4)
 
         Tween(Box, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
             Size = UDim2.new(0, 300, 0, 140),
@@ -541,19 +541,24 @@ function CustomLib:CreateWindow()
                 Title.ZIndex = 811
                 Title.Parent = Frame
 
+                -- Fatality Style Checkbox Switch Button
                 local Switch = Instance.new("TextButton")
-                Switch.Position = UDim2.new(1, -36, 0.5, -8)
-                Switch.Size = UDim2.new(0, 28, 0, 16)
+                Switch.Position = UDim2.new(1, -26, 0.5, -6)
+                Switch.Size = UDim2.new(0, 12, 0, 12)
                 Switch.BackgroundColor3 = toggled and Theme.OrangeAccent or Theme.Sidebar
+                Switch.BorderColor3 = toggled and Theme.OrangeAccent or Theme.PopupBorder
                 Switch.Text = ""
                 Switch.ZIndex = 811
                 Switch.Parent = Frame
-                Instance.new("UICorner", Switch).CornerRadius = UDim.new(1, 0)
+                Instance.new("UICorner", Switch).CornerRadius = UDim.new(0, 2)
 
                 local function setToggle(state)
                     toggled = state
                     CustomLib.Flags[flag] = toggled
-                    Tween(Switch, TweenInfo.new(0.18, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundColor3 = toggled and Theme.OrangeAccent or Theme.Sidebar})
+                    Tween(Switch, TweenInfo.new(0.15, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+                        BackgroundColor3 = toggled and Theme.OrangeAccent or Theme.Sidebar,
+                        BorderColor3 = toggled and Theme.OrangeAccent or Theme.PopupBorder
+                    })
                     callback(toggled)
                 end
 
@@ -746,18 +751,23 @@ function CustomLib:CreateWindow()
             Title.TextXAlignment = Enum.TextXAlignment.Left
             Title.Parent = Frame
 
+            -- Fatality Checkbox Switch Button Style matching the reference screenshot[cite: 1]
             local Switch = Instance.new("TextButton")
-            Switch.Position = UDim2.new(1, -38, 0.5, -8)
-            Switch.Size = UDim2.new(0, 28, 0, 16)
+            Switch.Position = UDim2.new(1, -28, 0.5, -6)
+            Switch.Size = UDim2.new(0, 12, 0, 12)
             Switch.BackgroundColor3 = toggled and Theme.OrangeAccent or Theme.Sidebar
+            Switch.BorderColor3 = toggled and Theme.OrangeAccent or Theme.CardBorder
             Switch.Text = ""
             Switch.Parent = Frame
-            Instance.new("UICorner", Switch).CornerRadius = UDim.new(1, 0)
+            Instance.new("UICorner", Switch).CornerRadius = UDim.new(0, 2)
 
             local function setToggle(state)
                 toggled = state
                 CustomLib.Flags[flag] = toggled
-                Tween(Switch, TweenInfo.new(0.18, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundColor3 = toggled and Theme.OrangeAccent or Theme.Sidebar})
+                Tween(Switch, TweenInfo.new(0.15, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+                    BackgroundColor3 = toggled and Theme.OrangeAccent or Theme.Sidebar,
+                    BorderColor3 = toggled and Theme.OrangeAccent or Theme.CardBorder
+                })
                 callback(toggled)
             end
 
@@ -767,7 +777,7 @@ function CustomLib:CreateWindow()
             function Obj:AddSubMenu(configFunc)
                 local Gear = Instance.new("TextButton")
                 Gear.Size = UDim2.new(0, 24, 0, 24)
-                Gear.Position = UDim2.new(1, -66, 0.5, -12)
+                Gear.Position = UDim2.new(1, -56, 0.5, -12)
                 Gear.BackgroundTransparency = 1
                 Gear.Font = Enum.Font.GothamBold
                 Gear.Text = "⚙"
@@ -931,13 +941,15 @@ function CustomLib:CreateWindow()
             Title.TextXAlignment = Enum.TextXAlignment.Left
             Title.Parent = Frame
 
+            -- Fatality style color preview box matching screenshot toggles/pickers[cite: 1]
             local Preview = Instance.new("TextButton")
-            Preview.Position = UDim2.new(1, -38, 0.5, -8)
-            Preview.Size = UDim2.new(0, 28, 0, 16)
+            Preview.Position = UDim2.new(1, -28, 0.5, -6)
+            Preview.Size = UDim2.new(0, 12, 0, 12)
             Preview.BackgroundColor3 = currentColor
+            Preview.BorderColor3 = Theme.CardBorder
             Preview.Text = ""
             Preview.Parent = Frame
-            Instance.new("UICorner", Preview).CornerRadius = UDim.new(0, 4)
+            Instance.new("UICorner", Preview).CornerRadius = UDim.new(0, 2)
 
             Preview.MouseButton1Click:Connect(function()
                 if activePopup then activePopup:Destroy() activePopup = nil end
