@@ -1,9 +1,9 @@
 -- =========================================================
--- A&H HUB v1.5.2 - FULLY FIXED UI SUITE & ESP HELPERS
+-- A&H HUB v1.5.3 - FULLY FIXED UI SUITE & ESP HELPERS
 -- =========================================================
 
 local AHHubLib = {
-    Version = "1.5.2",
+    Version = "1.5.3",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -107,7 +107,7 @@ function AHHubLib:CreateWindow()
     TooltipLabel.Parent = ScreenGui
     Instance.new("UICorner", TooltipLabel).CornerRadius = UDim.new(0, 4)
 
-    -- SAFE TOOLTIP POSITIONING (FIXES LINE 118 ERROR)
+    -- FIX FOR LINE 118: MouseMoved sends numbers (x, y), not an InputObject
     local function BindTooltip(object, text)
         if not text or text == "" then return end
         object.MouseEnter:Connect(function()
@@ -115,8 +115,7 @@ function AHHubLib:CreateWindow()
             TooltipLabel.Size = UDim2.new(0, TooltipLabel.TextBounds.X + 12, 0, 22)
             TooltipLabel.Visible = true
         end)
-        object.MouseMoved:Connect(function(x, y)
-            -- Reads global mouse position directly to eliminate argument type mismatch
+        object.MouseMoved:Connect(function()
             local mousePos = UserInputService:GetMouseLocation()
             TooltipLabel.Position = UDim2.new(0, mousePos.X + 12, 0, mousePos.Y + 12)
         end)
@@ -349,7 +348,7 @@ function AHHubLib:CreateWindow()
     local function CreateElementBuilder(PageView)
         local Elements = {}
 
-        -- SAFE RESIZE BINDING (FIXES LINE 353 ERROR)
+        -- FIX FOR LINE 353: Strictly verify PageView is a ScrollingFrame before touching CanvasSize
         local function RegisterScrollAutoResize()
             if PageView:IsA("ScrollingFrame") then
                 local layout = PageView:FindFirstChildOfClass("UIListLayout")
