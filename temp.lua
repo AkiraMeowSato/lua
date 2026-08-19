@@ -1,10 +1,9 @@
 -- =========================================================================
--- A&H HUB v1.6.4 - POLISHED POPUPS & ROBLOX CATALOG ACCESSORIES
--- Fixes popup closure on slider drag & implements Roblox Catalog Asset IDs.
+-- A&H HUB v1.6.5 - FIXED POPUP DRAGGING & SAFE ACCESSORY SYSTEM
 -- =========================================================================
 
 local AHHubLib = {
-    Version = "1.6.4",
+    Version = "1.6.5",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -15,7 +14,6 @@ local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
-local InsertService = game:GetService("InsertService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
@@ -63,9 +61,7 @@ local function MakeDraggable(dragHandle, frame)
     UserInputService.InputChanged:Connect(function(input)
         if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             local delta = input.Position - dragStart
-            Tween(frame, TweenInfo.new(0.05, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-                Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-            })
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
     end)
     UserInputService.InputEnded:Connect(function(input)
@@ -101,7 +97,6 @@ function AHHubLib:CreateWindow()
 
     local activePopup = nil
     
-    -- Improved click-away check that ignores interactions inside active popup frames
     UserInputService.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.MouseButton2 then
             if activePopup and activePopup.Parent then
@@ -508,7 +503,7 @@ function AHHubLib:CreateWindow()
             local Popup = Instance.new("Frame")
             Popup.Size = UDim2.new(0, 220, 0, 160)
             local mouseLoc = UserInputService:GetMouseLocation()
-            Popup.Position = UDim2.new(0, math.clamp(mouseLoc.X + 10, 10, Workspace.CurrentCamera.ViewportSize.X - 230), 0, math.clamp(mouseLoc.Y, 10, Workspace.CurrentCamera.ViewportSize.Y - 170))
+            Popup.Position = UDim2.new(0, math.clamp(mouseLoc.X + 10, 10, Camera.ViewportSize.X - 230), 0, math.clamp(mouseLoc.Y, 10, Camera.ViewportSize.Y - 170))
             Popup.BackgroundColor3 = Theme.CardBg
             Popup.BackgroundTransparency = 0.15
             Popup.BorderSizePixel = 1
@@ -516,10 +511,8 @@ function AHHubLib:CreateWindow()
             Popup.ZIndex = 300
             Popup.Parent = ScreenGui
             Instance.new("UICorner", Popup).CornerRadius = UDim.new(0, 6)
-            MakeDraggable(Popup, Popup)
-
-            activePopup = Popup
-
+            
+            -- Dedicated draggable title bar to prevent full panel tracking issues
             local TopBar = Instance.new("Frame")
             TopBar.Size = UDim2.new(1, 0, 0, 24)
             TopBar.BackgroundColor3 = Theme.TitleBar
@@ -527,6 +520,9 @@ function AHHubLib:CreateWindow()
             TopBar.ZIndex = 301
             TopBar.Parent = Popup
             Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 6)
+            MakeDraggable(TopBar, Popup)
+
+            activePopup = Popup
 
             local TitleTxt = Instance.new("TextLabel")
             TitleTxt.Size = UDim2.new(1, -10, 1, 0)
@@ -586,6 +582,7 @@ function AHHubLib:CreateWindow()
                 Gear.Text = "⚙"
                 Gear.TextColor3 = Theme.TextMuted
                 Gear.TextSize = 12
+                Gear.ZIndex = 10
                 Gear.Parent = Btn
                 Gear.MouseButton1Click:Connect(function()
                     OpenFloatingPopup(Btn, configFunc)
@@ -649,6 +646,7 @@ function AHHubLib:CreateWindow()
                 Gear.Text = "⚙"
                 Gear.TextColor3 = Theme.TextMuted
                 Gear.TextSize = 12
+                Gear.ZIndex = 10
                 Gear.Parent = Frame
                 Gear.MouseButton1Click:Connect(function()
                     OpenFloatingPopup(Frame, configFunc)
@@ -662,6 +660,7 @@ function AHHubLib:CreateWindow()
             return self:AddToggle("Enable " .. (espName or "ESP"), "ESP_" .. (espName or "Renderer"), false, "Toggle native drawing ESP", callback)
         end
 
+        -- Safe catalog accessory builder fallback using direct Accessory handles
         function Elements:AddCosmeticAccessory(assetName)
             local Btn = Instance.new("TextButton")
             Btn.Size = UDim2.new(1, -10, 0, 32)
@@ -676,40 +675,43 @@ function AHHubLib:CreateWindow()
             Btn.Parent = PageView
             Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
 
-            -- Official Roblox Catalog Asset IDs for reliable loading
-            local assetIds = {
+            local catalogIDs = {
                 ["Top Hat"] = 1029017,
                 ["Debug Visor"] = 139151241
             }
 
             Btn.MouseButton1Click:Connect(function()
                 local char = LocalPlayer.Character
-                if char and char:FindFirstChild("Head") then
-                    local existing = char:FindFirstChild("AHHub_Cosmetic_" .. assetName)
-                    if existing then existing:Destroy() end
-
-                    local assetId = assetIds[assetName]
-                    if assetId then
-                        task.spawn(function()
-                            local success, model = pcall(function()
-                                return InsertService:LoadAsset(assetId)
-                            end)
-                            if success and model then
-                                model.Name = "AHHub_Cosmetic_" .. assetName
-                                local accessories = model:GetChildren()
-                                for _, acc in ipairs(accessories) do
-                                    if acc:IsA("Accessory") or acc:IsA("Model") then
-                                        acc.Parent = char
-                                        AHHubLib:Notify("Cosmetics", assetName .. " loaded via Roblox Catalog!", 2)
-                                        return
-                                    end
-                                end
-                                model:Destroy()
-                            end
-                            AHHubLib:Notify("Cosmetics Error", "Could not fetch catalog asset ID.", 2)
-                        end)
-                    end
+                if not char or not char:FindFirstChild("Head") then 
+                    AHHubLib:Notify("Cosmetics Error", "Character head not found.", 2)
+                    return 
                 end
+
+                local existing = char:FindFirstChild("AHHub_Cosmetic_" .. assetName)
+                if existing then existing:Destroy() end
+
+                local assetId = catalogIDs[assetName]
+                if not assetId then return end
+
+                task.spawn(function()
+                    -- Bypass client-side restrictions by fetching mesh attachment data safely via insert fallback
+                    local success, model = pcall(function()
+                        return game:GetObjects("rbxassetid://" .. tostring(assetId))[1]
+                    end)
+
+                    if success and model then
+                        model.Name = "AHHub_Cosmetic_" .. assetName
+                        if model:IsA("Accessory") or model:IsA("Model") then
+                            model.Parent = char
+                            AHHubLib:Notify("Cosmetics", assetName .. " equipped successfully!", 2)
+                        else
+                            model:Destroy()
+                            AHHubLib:Notify("Cosmetics Error", "Invalid asset format received.", 2)
+                        end
+                    else
+                        AHHubLib:Notify("Cosmetics Error", "Could not fetch catalog asset safely.", 2)
+                    end
+                end)
             end)
         end
 
@@ -724,6 +726,7 @@ function AHHubLib:CreateWindow()
             Frame.BackgroundColor3 = Theme.CardBg
             Frame.BorderSizePixel = 1
             Frame.BorderColor3 = Theme.CardBorder
+            Frame.ZIndex = 5
             Frame.Parent = PageView
             Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 6)
             BindTooltip(Frame, tooltipText)
@@ -737,6 +740,7 @@ function AHHubLib:CreateWindow()
             Title.TextColor3 = Theme.TextMain
             Title.TextSize = 11
             Title.TextXAlignment = Enum.TextXAlignment.Left
+            Title.ZIndex = 6
             Title.Parent = Frame
 
             local LiveLabel = Instance.new("TextLabel")
@@ -748,6 +752,7 @@ function AHHubLib:CreateWindow()
             LiveLabel.TextColor3 = Theme.OrangeAccent
             LiveLabel.TextSize = 11
             LiveLabel.TextXAlignment = Enum.TextXAlignment.Right
+            LiveLabel.ZIndex = 6
             LiveLabel.Parent = Frame
 
             local Track = Instance.new("TextButton")
@@ -755,6 +760,7 @@ function AHHubLib:CreateWindow()
             Track.Size = UDim2.new(1, -20, 0, 8)
             Track.BackgroundColor3 = Theme.Sidebar
             Track.Text = ""
+            Track.ZIndex = 6
             Track.Parent = Frame
             Instance.new("UICorner", Track).CornerRadius = UDim.new(1, 0)
 
@@ -762,6 +768,7 @@ function AHHubLib:CreateWindow()
             local Fill = Instance.new("Frame")
             Fill.Size = UDim2.new(pct, 0, 1, 0)
             Fill.BackgroundColor3 = Theme.OrangeAccent
+            Fill.ZIndex = 7
             Fill.Parent = Track
             Instance.new("UICorner", Fill).CornerRadius = UDim.new(1, 0)
 
@@ -776,13 +783,22 @@ function AHHubLib:CreateWindow()
             end
 
             Track.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true updateSlider(input) end
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then 
+                    dragging = true 
+                    updateSlider(input) 
+                end
             end)
+            
             UserInputService.InputChanged:Connect(function(input)
-                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then updateSlider(input) end
+                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then 
+                    updateSlider(input) 
+                end
             end)
+            
             UserInputService.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then 
+                    dragging = false 
+                end
             end)
         end
 
@@ -964,6 +980,7 @@ function AHHubLib:CreateWindow()
     end
 
     local function CreateDrawingObject(p)
+        if not Drawing then return end
         local drawings = {
             Box = Drawing.new("Square"),
             Name = Drawing.new("Text"),
