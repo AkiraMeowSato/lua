@@ -1,9 +1,9 @@
 -- =========================================================================
--- A&H HUB v1.9.5 - FINAL REFINEMENT & CATALOG ACCESSORY SYSTEM
+-- A&H HUB v1.9.6 - COLOR PICKER & SUB-MENU FIX
 -- =========================================================================
 
 local AHHubLib = {
-    Version = "1.9.5",
+    Version = "1.9.6",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -239,7 +239,6 @@ function AHHubLib:CreateWindow()
     local savedPosition = DefaultPos
     local savedSize = DefaultSize
 
-    -- Sidebar starts flush with 32px TitleBar
     local Sidebar = Instance.new("Frame")
     Sidebar.Size = UDim2.new(0, 160, 1, -32)
     Sidebar.Position = UDim2.new(0, 0, 0, 32)
@@ -276,7 +275,6 @@ function AHHubLib:CreateWindow()
     UserNameLbl.TextXAlignment = Enum.TextXAlignment.Left
     UserNameLbl.Parent = ProfileFrame
 
-    -- Content container starts flush with TitleBar (Y = 32)
     local ContentContainer = Instance.new("Frame")
     ContentContainer.Size = UDim2.new(1, -170, 1, -32)
     ContentContainer.Position = UDim2.new(0, 165, 0, 32)
@@ -492,7 +490,6 @@ function AHHubLib:CreateWindow()
         end)
     end
 
-    -- NavHolder starts right at the top of the sidebar (Y = 6)
     local NavHolder = Instance.new("Frame")
     NavHolder.Position = UDim2.new(0, 8, 0, 6)
     NavHolder.Size = UDim2.new(1, -16, 1, -60)
@@ -850,7 +847,6 @@ function AHHubLib:CreateWindow()
             Title.TextXAlignment = Enum.TextXAlignment.Left
             Title.Parent = Frame
 
-            -- Visual Color Indicator Button & RGB Text Preview inside popup picker
             local ColorPreview = Instance.new("TextButton")
             ColorPreview.Position = UDim2.new(1, -45, 0.5, -9)
             ColorPreview.Size = UDim2.new(0, 34, 0, 18)
@@ -903,7 +899,6 @@ function AHHubLib:CreateWindow()
                 TLab.ZIndex = 852
                 TLab.Parent = TopP
 
-                -- Active HEX/RGB Text Display Window inside Picker
                 local HexDisplay = Instance.new("TextLabel")
                 HexDisplay.Size = UDim2.new(1, -16, 0, 24)
                 HexDisplay.Position = UDim2.new(0, 8, 0, 28)
@@ -917,8 +912,9 @@ function AHHubLib:CreateWindow()
                 HexDisplay.Parent = PickerPop
                 Instance.new("UICorner", HexDisplay).CornerRadius = UDim.new(0, 4)
 
+                -- FIXED: Using string.format correctly with standard string formatting syntax
                 local function updateHexText(c)
-                    HexDisplay.Text = string.Format("RGB: %d, %d, %d", math.floor(c.R*255), math.floor(c.G*255), math.floor(c.B*255))
+                    HexDisplay.Text = string.format("RGB: %d, %d, %d", math.floor(c.R * 255 + 0.5), math.floor(c.G * 255 + 0.5), math.floor(c.B * 255 + 0.5))
                 end
                 updateHexText(currentColor)
 
@@ -1005,7 +1001,6 @@ function AHHubLib:CreateWindow()
             end
 
             Btn.MouseButton1Click:Connect(function()
-                -- WORKING REAL CATALOG ACCESSORY LOADER VIA INSERTSERVICE & EXACT ATTACHMENT MAPPING
                 local char = LocalPlayer.Character
                 if char then
                     local existing = char:FindFirstChild("AHHub_CatalogAccessory_" .. tostring(assetId))
@@ -1023,7 +1018,6 @@ function AHHubLib:CreateWindow()
                         if success and loadedAsset then
                             loadedAsset.Name = "AHHub_CatalogAccessory_" .. tostring(assetId)
                             
-                            -- Handle Accoutrement/Accessories mapping directly onto character humanoid or head
                             local accessoryFound = false
                             for _, descendant in ipairs(loadedAsset:GetDescendants()) do
                                 if descendant:IsA("Accessory") or descendant:IsA("Model") then
@@ -1080,7 +1074,6 @@ function AHHubLib:CreateWindow()
             Title.ZIndex = 6
             Title.Parent = Frame
 
-            -- FIXED POSITION: Live value number label placed cleanly next to the track label, with settings wheel positioned immediately to the right of the number!
             local LiveLabel = Instance.new("TextLabel")
             LiveLabel.Position = UDim2.new(1, -85, 0, 4)
             LiveLabel.Size = UDim2.new(0, 45, 0, 16)
@@ -1143,7 +1136,6 @@ function AHHubLib:CreateWindow()
             function SliderObj:AddSubMenu(configFunc)
                 local Gear = Instance.new("TextButton")
                 Gear.Size = UDim2.new(0, 24, 0, 24)
-                -- SETTINGS WHEEL POSITIONED RIGHT NEXT TO THE NUMBER LABEL (X: 1, -36, Y: 2)
                 Gear.Position = UDim2.new(1, -36, 0, 0)
                 Gear.BackgroundTransparency = 1
                 Gear.Font = Enum.Font.GothamBold
