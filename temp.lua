@@ -1,9 +1,9 @@
 -- =========================================================================
--- A&H HUB v1.7.5 - SUBMENU VISIBILITY & NOTIFICATION FIXES
+-- A&H HUB v1.7.6 - FULL SUBMENU & POPUP FIX
 -- =========================================================================
 
 local AHHubLib = {
-    Version = "1.7.5",
+    Version = "1.7.6",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -26,9 +26,9 @@ local Theme = {
     CardBg = Color3.fromRGB(42, 32, 26),
     CardBorder = Color3.fromRGB(80, 60, 48),
     TitleBar = Color3.fromRGB(36, 26, 21),
-    PopupBg = Color3.fromRGB(55, 42, 35),       -- Distinct, lighter backdrop for submenus
-    PopupBtn = Color3.fromRGB(68, 52, 43),      -- Clear contrasting background for submenu buttons
-    PopupBorder = Color3.fromRGB(110, 85, 68),  -- Sharp borders so buttons stand out clearly
+    PopupBg = Color3.fromRGB(55, 42, 35),       
+    PopupBtn = Color3.fromRGB(68, 52, 43),      
+    PopupBorder = Color3.fromRGB(110, 85, 68),  
     TextBright = Color3.fromRGB(255, 255, 255),
     TextMain = Color3.fromRGB(240, 225, 210),
     TextMuted = Color3.fromRGB(190, 165, 145),
@@ -513,7 +513,6 @@ function AHHubLib:CreateWindow()
         end
         RegisterScrollAutoResize()
 
-        -- Custom builder helper for elements inside popup submenus with distinct styling
         local function CreatePopupElementBuilder(SubPageView)
             local SubElements = {}
 
@@ -833,11 +832,33 @@ function AHHubLib:CreateWindow()
             Btn.MouseEnter:Connect(function() Tween(Btn, TweenInfo.new(0.12), {BackgroundColor3 = Theme.TabSelected, BorderColor3 = Theme.OrangeAccent}) end)
             Btn.MouseLeave:Connect(function() Tween(Btn, TweenInfo.new(0.12), {BackgroundColor3 = Theme.CardBg, BorderColor3 = Theme.CardBorder}) end)
 
+            local CosmeticObj = {}
+            function CosmeticObj:AddSubMenu(configFunc)
+                local Gear = Instance.new("TextButton")
+                Gear.Size = UDim2.new(0, 24, 0, 24)
+                Gear.Position = UDim2.new(1, -28, 0.5, -12)
+                Gear.BackgroundTransparency = 1
+                Gear.Font = Enum.Font.GothamBold
+                Gear.Text = "⚙"
+                Gear.TextColor3 = Theme.TextMuted
+                Gear.TextSize = 12
+                Gear.ZIndex = 805
+                Gear.Parent = Btn
+                Gear.MouseButton1Click:Connect(function()
+                    task.spawn(function()
+                        task.wait()
+                        OpenFloatingPopup(Btn, configFunc)
+                    end)
+                end)
+                return CosmeticObj
+            end
+
             Btn.MouseButton1Click:Connect(function()
                 if customEquipCallback then
                     customEquipCallback()
                 end
             end)
+            return CosmeticObj
         end
 
         function Elements:AddSlider(text, flag, min, max, default, tooltipText, callback)
@@ -926,6 +947,29 @@ function AHHubLib:CreateWindow()
                     dragging = false 
                 end
             end)
+
+            local SliderObj = {}
+            function SliderObj:AddSubMenu(configFunc)
+                local Gear = Instance.new("TextButton")
+                Gear.Size = UDim2.new(0, 24, 0, 24)
+                Gear.Position = UDim2.new(1, -65, 0.5, -12)
+                Gear.BackgroundTransparency = 1
+                Gear.Font = Enum.Font.GothamBold
+                Gear.Text = "⚙"
+                Gear.TextColor3 = Theme.TextMuted
+                Gear.TextSize = 12
+                Gear.ZIndex = 805
+                Gear.Parent = Frame
+                Gear.MouseButton1Click:Connect(function()
+                    task.spawn(function()
+                        task.wait()
+                        OpenFloatingPopup(Frame, configFunc)
+                    end)
+                end)
+                return SliderObj
+            end
+
+            return SliderObj
         end
 
         return Elements
