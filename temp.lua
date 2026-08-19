@@ -1,9 +1,9 @@
 -- =========================================================================
--- A&H HUB v1.9.9 - ULTIMATE COMPREHENSIVE TEST & LIBRARY SCRIPT
+-- A&H HUB v1.9.10 - ULTIMATE COMPREHENSIVE TEST & LIBRARY SCRIPT
 -- =========================================================================
 
 local AHHubLib = {
-    Version = "1.9.235",
+    Version = "1.9.30",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -976,7 +976,7 @@ function AHHubLib:CreateWindow()
                 if activePopup then activePopup:Destroy() activePopup = nil end
 
                 local PickerPopup = Instance.new("Frame")
-                PickerPopup.Size = UDim2.new(0, 0, 0, 0)
+                PickerPopup.Size = UDim2.new(0, 200, 0, 210)
                 local mouseLoc = UserInputService:GetMouseLocation()
                 PickerPopup.Position = UDim2.new(0, math.clamp(mouseLoc.X - 110, 10, Camera.ViewportSize.X - 220), 0, math.clamp(mouseLoc.Y - 10, 10, Camera.ViewportSize.Y - 220))
                 PickerPopup.BackgroundColor3 = Theme.PopupBg
@@ -986,7 +986,6 @@ function AHHubLib:CreateWindow()
                 PickerPopup.Parent = ScreenGui
                 Instance.new("UICorner", PickerPopup).CornerRadius = UDim.new(0, 8)
 
-                Tween(PickerPopup, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 200, 0, 210)})
                 activePopup = PickerPopup
 
                 local TopBar = Instance.new("Frame")
@@ -1031,9 +1030,7 @@ function AHHubLib:CreateWindow()
 
                 local slices = 36
                 for i = 1, slices do
-                    local angle1 = (i - 1) / slices * math.pi * 2
-                    local angle2 = i / slices * math.pi * 2
-                    
+                    local sliceHue = (i - 1) / slices
                     local sliceBtn = Instance.new("TextButton")
                     sliceBtn.Size = UDim2.new(1, 0, 1, 0)
                     sliceBtn.BackgroundTransparency = 1
@@ -1041,19 +1038,14 @@ function AHHubLib:CreateWindow()
                     sliceBtn.Text = ""
                     sliceBtn.ZIndex = 852
                     sliceBtn.Parent = WheelContainer
-
-                    local sliceHue = (i - 1) / slices
                     sliceBtn.BackgroundColor3 = Color3.fromHSV(sliceHue, 1, 1)
 
                     sliceBtn.MouseButton1Down:Connect(function()
                         h = sliceHue
                         s = 1.0
-                        local updatePosFromHSV = function()
-                            local radius = s * 70
-                            local radAngle = h * math.pi * 2
-                            CenterIndicator.Position = UDim2.new(0.5, math.cos(radAngle) * radius, 0.5, math.sin(radAngle) * radius)
-                        end
-                        updatePosFromHSV()
+                        local radius = s * 70
+                        local radAngle = h * math.pi * 2
+                        CenterIndicator.Position = UDim2.new(0.5, math.cos(radAngle) * radius, 0.5, math.sin(radAngle) * radius)
                         
                         local conn
                         conn = UserInputService.InputChanged:Connect(function(input)
