@@ -1,9 +1,9 @@
 -- =========================================================================
--- A&H HUB v1.6.7 - STABLE RELEASE (DRAG, ESP TAB, & REAL ASSET ID FIXED)
+-- A&H HUB v1.6.8 - RESET ON CLOSE & MINIMIZED COFFEE DOCK ICON
 -- =========================================================================
 
 local AHHubLib = {
-    Version = "1.6.7",
+    Version = "1.6.8",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -37,6 +37,8 @@ local Theme = {
 }
 
 AHHubLib.Flags = {}
+AHHubLib.ToggleCallbacks = {}
+AHHubLib.SliderCallbacks = {}
 
 local function getGuiParent()
     local ok, hui = pcall(function() return gethui and gethui() end)
@@ -79,6 +81,9 @@ function AHHubLib:CreateWindow()
     local ExistingUI = ParentGui:FindFirstChild("AHHub_Dashboard")
     if ExistingUI then ExistingUI:Destroy() end
 
+    local ExistingDock = ParentGui:FindFirstChild("AHHub_DockIcon")
+    if ExistingDock then ExistingDock:Destroy() end
+
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "AHHub_Dashboard"
     ScreenGui.ResetOnSpawn = false
@@ -97,6 +102,22 @@ function AHHubLib:CreateWindow()
     Window.ClipsDescendants = false
     Window.Parent = ScreenGui
     Instance.new("UICorner", Window).CornerRadius = UDim.new(0, 10)
+
+    -- Floating Dock Icon for Minimized State (Bottom Right)
+    local DockIcon = Instance.new("TextButton")
+    DockIcon.Name = "AHHub_DockIcon"
+    DockIcon.Size = UDim2.new(0, 48, 0, 48)
+    DockIcon.Position = UDim2.new(1, -64, 1, -64)
+    DockIcon.BackgroundColor3 = Theme.Sidebar
+    DockIcon.BorderColor3 = Theme.OrangeAccent
+    DockIcon.BorderSizePixel = 1
+    DockIcon.Font = Enum.Font.GothamBold
+    DockIcon.Text = "☕"
+    DockIcon.TextSize = 22
+    DockIcon.Visible = false
+    DockIcon.ZIndex = 600
+    DockIcon.Parent = ScreenGui
+    Instance.new("UICorner", DockIcon).CornerRadius = UDim.new(1, 0)
 
     local activePopup = nil
     
@@ -144,6 +165,8 @@ function AHHubLib:CreateWindow()
         end)
         object.MouseLeave:Connect(function() TooltipLabel.Visible = false end)
     end
+
+    BindTooltip(DockIcon, "A&H Hub (Click to Restore)")
 
     local TitleBar = Instance.new("Frame")
     TitleBar.Size = UDim2.new(1, 0, 0, 32)
@@ -219,20 +242,40 @@ function AHHubLib:CreateWindow()
     ContentContainer.BackgroundTransparency = 1
     ContentContainer.Parent = Window
 
-    local ShowConfirmation
+    local ShowConfirmation, ResetToDefaultsAndClose
 
-    MakeCircularButton(Theme.YellowWarn, Color3.fromRGB(240, 190, 80), 0, function()
+    -- Reset all flags and call their respective callbacks back to defaults before closing/terminating
+    ResetToDefaultsAndClose = function()
+        for flag, defaultVal in pairs(AHHubLib.Defaults) do
+            AHHubLib.Flags[flag] = defaultVal
+            if AHHubLib.ToggleCallbacks[flag] then
+                pcall(function() AHHubLib.ToggleCallbacks[flag](defaultVal) end)
+            end
+            if AHHubLib.SliderCallbacks[flag] then
+                pcall(function() AHHubLib.SliderCallbacks[flag](defaultVal) end)
+            end
+        end
+        ScreenGui:Destroy()
+    end
+
+    local function ToggleMinimize()
         isMinimized = not isMinimized
         if isMinimized then
             if not isMaximized then savedSize = Window.Size end
             Sidebar.Visible = false
             ContentContainer.Visible = false
-            Tween(Window, TweenInfo.new(0.2), {Size = UDim2.new(Window.Size.X.Scale, Window.Size.X.Offset, 0, 32)})
+            Window.Visible = false
+            DockIcon.Visible = true
         else
+            Window.Visible = true
+            DockIcon.Visible = false
             Tween(Window, TweenInfo.new(0.2), {Size = isMaximized and UDim2.new(1, 0, 1, 0) or savedSize})
             task.delay(0.15, function() Sidebar.Visible = true ContentContainer.Visible = true end)
         end
-    end)
+    end
+
+    MakeCircularButton(Theme.YellowWarn, Color3.fromRGB(240, 190, 80), 0, ToggleMinimize)
+    DockIcon.MouseButton1Click:Connect(ToggleMinimize)
 
     MakeCircularButton(Theme.GreenOk, Color3.fromRGB(90, 220, 110), 22, function()
         if isMinimized then return end
@@ -248,7 +291,7 @@ function AHHubLib:CreateWindow()
     end)
 
     MakeCircularButton(Theme.RedDanger, Color3.fromRGB(240, 80, 80), 44, function()
-        ShowConfirmation("Close A&H Hub?", "Are you sure you want to close the user interface?", function() ScreenGui:Destroy() end)
+        ShowConfirmation("Close A&H Hub?", "Are you sure? This will reset all configurations to default and close the hub.", ResetToDefaultsAndClose)
     end)
 
     local NotificationHolder = Instance.new("Frame")
@@ -562,6 +605,7 @@ function AHHubLib:CreateWindow()
             local toggled = defaultState or false
             AHHubLib.Flags[flag] = toggled
             AHHubLib.Defaults[flag] = defaultState
+            AHHubLib.ToggleCallbacks[flag] = callback
 
             local Frame = Instance.new("Frame")
             Frame.Size = UDim2.new(1, -10, 0, 32)
@@ -601,30 +645,10 @@ function AHHubLib:CreateWindow()
 
             Switch.MouseButton1Click:Connect(function() ToggleObject:Set(not toggled) end)
 
-            function ToggleObject:AddSubMenu(configFunc)
-                local Gear = Instance.new("TextButton")
-                Gear.Size = UDim2.new(0, 24, 0, 24)
-                Gear.Position = UDim2.new(1, -68, 0.5, -12)
-                Gear.BackgroundTransparency = 1
-                Gear.Font = Enum.Font.GothamBold
-                Gear.Text = "⚙"
-                Gear.TextColor3 = Theme.TextMuted
-                Gear.TextSize = 12
-                Gear.ZIndex = 10
-                Gear.Parent = Frame
-                Gear.MouseButton1Click:Connect(function()
-                    OpenFloatingPopup(Frame, configFunc)
-                end)
-            end
-
             return ToggleObject
         end
 
-        function Elements:AddESPForRenderer(espName, callback)
-            return self:AddToggle("Enable " .. (espName or "ESP"), "ESP_" .. (espName or "Renderer"), false, "Toggle native drawing ESP", callback)
-        end
-
-        function Elements:AddCosmeticAccessory(assetName, assetId)
+        function Elements:AddCosmeticAccessory(assetName, assetId, customEquipCallback)
             local Btn = Instance.new("TextButton")
             Btn.Size = UDim2.new(1, -10, 0, 32)
             Btn.BackgroundColor3 = Theme.CardBg
@@ -639,52 +663,9 @@ function AHHubLib:CreateWindow()
             Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
 
             Btn.MouseButton1Click:Connect(function()
-                local char = LocalPlayer.Character
-                if not char or not char:FindFirstChild("Head") then 
-                    AHHubLib:Notify("Cosmetics Error", "Character head not found.", 2)
-                    return 
+                if customEquipCallback then
+                    customEquipCallback()
                 end
-
-                local existing = char:FindFirstChild("AHHub_Cosmetic_" .. assetName)
-                if existing then existing:Destroy() end
-
-                task.spawn(function()
-                    local success, loadedObj = pcall(function()
-                        return InsertService:LoadAsset(assetId or 12283471793)
-                    end)
-
-                    if success and loadedObj then
-                        loadedObj.Name = "AHHub_Cosmetic_" .. assetName
-                        local hatPart = loadedObj:FindFirstChildWhichIsA("BasePart", true)
-                        if hatPart then
-                            local weld = Instance.new("WeldConstraint")
-                            weld.Part0 = hatPart
-                            weld.Part1 = char.Head
-                            weld.Parent = hatPart
-                            loadedObj.Parent = char
-                            AHHubLib:Notify("Cosmetics", assetName .. " equipped successfully!", 2)
-                            return
-                        end
-                    end
-
-                    local hatModel = Instance.new("Model")
-                    hatModel.Name = "AHHub_Cosmetic_" .. assetName
-
-                    local handle = Instance.new("Part")
-                    handle.Name = "Handle"
-                    handle.Size = Vector3.new(1.8, 0.4, 1.8)
-                    handle.CFrame = char.Head.CFrame + Vector3.new(0, 1.1, 0)
-                    handle.BrickColor = BrickColor.new("Dark orange")
-                    handle.Parent = hatModel
-
-                    local weld = Instance.new("WeldConstraint")
-                    weld.Part0 = handle
-                    weld.Part1 = char.Head
-                    weld.Parent = handle
-
-                    hatModel.Parent = char
-                    AHHubLib:Notify("Cosmetics", assetName .. " equipped (Fallback Mesh Style)!", 2)
-                end)
             end)
         end
 
@@ -693,6 +674,7 @@ function AHHubLib:CreateWindow()
             local val = default or min
             AHHubLib.Flags[flag] = val
             AHHubLib.Defaults[flag] = default
+            AHHubLib.SliderCallbacks[flag] = callback
 
             local Frame = Instance.new("Frame")
             Frame.Size = UDim2.new(1, -10, 0, 44)
@@ -956,9 +938,6 @@ function AHHubLib:CreateWindow()
     end))
 
     function Controller:AddESPRenderer()
-        return ESPRenderer
-    end
-    function AHHubLib:AddESPRenderer()
         return ESPRenderer
     end
 
