@@ -1,9 +1,9 @@
 -- =========================================================================
--- A&H HUB v1.9.10 - ULTIMATE COMPREHENSIVE TEST & LIBRARY SCRIPT
+-- A&H HUB v1.9.11 - ULTIMATE COMPREHENSIVE TEST & LIBRARY SCRIPT
 -- =========================================================================
 
 local AHHubLib = {
-    Version = "1.9.30",
+    Version = "1.9.31",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -1009,10 +1009,12 @@ function AHHubLib:CreateWindow()
                 TitleTxt.ZIndex = 852
                 TitleTxt.Parent = TopBar
 
-                local WheelContainer = Instance.new("Frame")
+                local WheelContainer = Instance.new("TextButton")
                 WheelContainer.Size = UDim2.new(0, 140, 0, 140)
                 WheelContainer.Position = UDim2.new(0.5, -70, 0, 30)
                 WheelContainer.BackgroundTransparency = 1
+                WheelContainer.AutoButtonColor = false
+                WheelContainer.Text = ""
                 WheelContainer.ZIndex = 851
                 WheelContainer.Parent = PickerPopup
 
@@ -1031,53 +1033,48 @@ function AHHubLib:CreateWindow()
                 local slices = 36
                 for i = 1, slices do
                     local sliceHue = (i - 1) / slices
-                    local sliceBtn = Instance.new("TextButton")
+                    local sliceBtn = Instance.new("Frame")
                     sliceBtn.Size = UDim2.new(1, 0, 1, 0)
-                    sliceBtn.BackgroundTransparency = 1
-                    sliceBtn.AutoButtonColor = false
-                    sliceBtn.Text = ""
+                    sliceBtn.BackgroundTransparency = 0
+                    sliceBtn.BorderSizePixel = 0
                     sliceBtn.ZIndex = 852
                     sliceBtn.Parent = WheelContainer
                     sliceBtn.BackgroundColor3 = Color3.fromHSV(sliceHue, 1, 1)
-
-                    sliceBtn.MouseButton1Down:Connect(function()
-                        h = sliceHue
-                        s = 1.0
-                        local radius = s * 70
-                        local radAngle = h * math.pi * 2
-                        CenterIndicator.Position = UDim2.new(0.5, math.cos(radAngle) * radius, 0.5, math.sin(radAngle) * radius)
-                        
-                        local conn
-                        conn = UserInputService.InputChanged:Connect(function(input)
-                            if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-                                local relX = input.Position.X - WheelContainer.AbsolutePosition.X - 70
-                                local relY = input.Position.Y - WheelContainer.AbsolutePosition.Y - 70
-                                local dist = math.sqrt(relX*relX + relY*relY)
-                                s = math.clamp(dist / 70, 0, 1)
-                                h = (math.atan2(relY, relX) / (math.pi * 2)) % 1
-                                CenterIndicator.Position = UDim2.new(0.5, math.cos(h * math.pi * 2) * (s * 70), 0.5, math.sin(h * math.pi * 2) * (s * 70))
-                                
-                                currentColor = Color3.fromHSV(h, s, v)
-                                Preview.BackgroundColor3 = currentColor
-                                AHHubLib.Flags[flag] = currentColor
-                                callback(currentColor)
-                            end
-                        end)
-
-                        local releaseConn
-                        releaseConn = UserInputService.InputEnded:Connect(function(input)
-                            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                                if conn then conn:Disconnect() end
-                                if releaseConn then releaseConn:Disconnect() end
-                            end
-                        end)
-
-                        currentColor = Color3.fromHSV(h, s, v)
-                        Preview.BackgroundColor3 = currentColor
-                        AHHubLib.Flags[flag] = currentColor
-                        callback(currentColor)
-                    end)
                 end
+
+                local function evaluateWheelInput(input)
+                    local relX = input.Position.X - WheelContainer.AbsolutePosition.X - 70
+                    local relY = input.Position.Y - WheelContainer.AbsolutePosition.Y - 70
+                    local dist = math.sqrt(relX*relX + relY*relY)
+                    s = math.clamp(dist / 70, 0, 1)
+                    h = (math.atan2(relY, relX) / (math.pi * 2)) % 1
+                    CenterIndicator.Position = UDim2.new(0.5, math.cos(h * math.pi * 2) * (s * 70), 0.5, math.sin(h * math.pi * 2) * (s * 70))
+                    
+                    currentColor = Color3.fromHSV(h, s, v)
+                    Preview.BackgroundColor3 = currentColor
+                    AHHubLib.Flags[flag] = currentColor
+                    callback(currentColor)
+                end
+
+                local pickingWheel = false
+                WheelContainer.InputBegan:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                        pickingWheel = true
+                        evaluateWheelInput(input)
+                    end
+                end)
+
+                UserInputService.InputChanged:Connect(function(input)
+                    if pickingWheel and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                        evaluateWheelInput(input)
+                    end
+                end)
+
+                UserInputService.InputEnded:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                        pickingWheel = false
+                    end
+                end)
 
                 local radAngleInit = h * math.pi * 2
                 local radiusInit = s * 70
