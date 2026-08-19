@@ -1,9 +1,9 @@
 -- =========================================================================
--- A&H HUB v1.7.1 - FIXED TOGGLE SUB-MENU RETURN OBJECT
+-- A&H HUB v1.7.2 - FIXED POPUP CLICKS & VISIBILITY CONTRAST
 -- =========================================================================
 
 local AHHubLib = {
-    Version = "1.7.1",
+    Version = "1.7.2",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -23,14 +23,15 @@ local Theme = {
     Bg = Color3.fromRGB(20, 14, 11),
     WindowBg = Color3.fromRGB(28, 20, 16),
     Sidebar = Color3.fromRGB(24, 18, 14),
-    CardBg = Color3.fromRGB(34, 25, 20),
-    CardBorder = Color3.fromRGB(55, 40, 32),
-    TitleBar = Color3.fromRGB(30, 22, 18),
-    TextBright = Color3.fromRGB(255, 248, 240),
-    TextMain = Color3.fromRGB(230, 210, 190),
-    TextMuted = Color3.fromRGB(160, 135, 120),
-    OrangeAccent = Color3.fromRGB(210, 130, 60),
-    TabSelected = Color3.fromRGB(48, 34, 27),
+    CardBg = Color3.fromRGB(42, 32, 26),         -- Lighter background for better contrast
+    CardBorder = Color3.fromRGB(80, 60, 48),     -- Sharper border
+    TitleBar = Color3.fromRGB(36, 26, 21),
+    PopupBg = Color3.fromRGB(32, 23, 18),
+    TextBright = Color3.fromRGB(255, 255, 255),  -- Pure white for highest legibility
+    TextMain = Color3.fromRGB(240, 225, 210),    -- Brighter main text
+    TextMuted = Color3.fromRGB(190, 165, 145),   -- Clearer muted text
+    OrangeAccent = Color3.fromRGB(230, 140, 60),
+    TabSelected = Color3.fromRGB(58, 42, 33),
     Disabled = Color3.fromRGB(50, 40, 35),
     RedDanger = Color3.fromRGB(200, 60, 60),
     YellowWarn = Color3.fromRGB(220, 160, 50),
@@ -151,7 +152,7 @@ function AHHubLib:CreateWindow()
     TooltipLabel.BorderSizePixel = 1
     TooltipLabel.Font = Enum.Font.GothamMedium
     TooltipLabel.TextColor3 = Theme.TextBright
-    TooltipLabel.TextSize = 10
+    TooltipLabel.TextSize = 11
     TooltipLabel.Visible = false
     TooltipLabel.ZIndex = 400
     TooltipLabel.Parent = ScreenGui
@@ -200,7 +201,7 @@ function AHHubLib:CreateWindow()
     WindowTitle.BackgroundTransparency = 1
     WindowTitle.Font = Enum.Font.GothamBold
     WindowTitle.Text = self.Title .. "  •  " .. self.Version
-    WindowTitle.TextColor3 = Theme.TextMain
+    WindowTitle.TextColor3 = Theme.TextBright
     WindowTitle.TextSize = 12
     WindowTitle.TextXAlignment = Enum.TextXAlignment.Left
     WindowTitle.ZIndex = 11
@@ -241,7 +242,6 @@ function AHHubLib:CreateWindow()
     Sidebar.BorderSizePixel = 0
     Sidebar.Parent = Window
 
-    -- User Profile Chip in Bottom Left of Sidebar
     local ProfileFrame = Instance.new("Frame")
     ProfileFrame.Size = UDim2.new(1, -12, 0, 42)
     ProfileFrame.Position = UDim2.new(0, 6, 1, -48)
@@ -348,7 +348,7 @@ function AHHubLib:CreateWindow()
         Card.Size = UDim2.new(0, 250, 0, 55)
         Card.Position = UDim2.new(0, 20, 0, 15)
         Card.BackgroundColor3 = Theme.CardBg
-        Card.BackgroundTransparency = 1
+        Card.BackgroundTransparency = 0.1
         Card.BorderSizePixel = 1
         Card.BorderColor3 = Theme.OrangeAccent
         Card.Parent = NotificationHolder
@@ -363,7 +363,6 @@ function AHHubLib:CreateWindow()
         Txt.TextColor3 = Theme.OrangeAccent
         Txt.TextSize = 12
         Txt.TextXAlignment = Enum.TextXAlignment.Left
-        Txt.TextTransparency = 1
         Txt.Parent = Card
 
         local Sub = Instance.new("TextLabel")
@@ -372,28 +371,11 @@ function AHHubLib:CreateWindow()
         Sub.BackgroundTransparency = 1
         Sub.Font = Enum.Font.GothamMedium
         Sub.Text = desc
-        Sub.TextColor3 = Theme.TextMain
+        Sub.TextColor3 = Theme.TextBright
         Sub.TextSize = 10
         Sub.TextXAlignment = Enum.TextXAlignment.Left
         Sub.TextWrapped = true
-        Sub.TextTransparency = 1
         Sub.Parent = Card
-
-        Tween(Card, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-            Position = UDim2.new(0, 0, 0, 0),
-            BackgroundTransparency = 0.15
-        })
-        Tween(Txt, TweenInfo.new(0.3), {TextTransparency = 0})
-        Tween(Sub, TweenInfo.new(0.3), {TextTransparency = 0})
-
-        task.delay(duration, function()
-            local fadeOutCard = Tween(Card, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1, Size = UDim2.new(0, 220, 0, 0)})
-            Tween(Txt, TweenInfo.new(0.25), {TextTransparency = 1})
-            Tween(Sub, TweenInfo.new(0.25), {TextTransparency = 1})
-            fadeOutCard.Completed:Connect(function()
-                Card:Destroy()
-            end)
-        end)
     end
 
     ShowConfirmation = function(title, message, onAccept)
@@ -437,7 +419,7 @@ function AHHubLib:CreateWindow()
         M.BackgroundTransparency = 1
         M.Font = Enum.Font.GothamMedium
         M.Text = message
-        M.TextColor3 = Theme.TextMain
+        M.TextColor3 = Theme.TextBright
         M.TextSize = 11
         M.TextWrapped = true
         M.ZIndex = 252
@@ -559,11 +541,11 @@ function AHHubLib:CreateWindow()
             local mouseLoc = UserInputService:GetMouseLocation()
             local targetPos = UDim2.new(0, math.clamp(mouseLoc.X + 10, 10, Camera.ViewportSize.X - 230), 0, math.clamp(mouseLoc.Y, 10, Camera.ViewportSize.Y - 170))
             Popup.Position = targetPos
-            Popup.BackgroundColor3 = Theme.CardBg
-            Popup.BackgroundTransparency = 0.1
+            Popup.BackgroundColor3 = Theme.PopupBg
+            Popup.BackgroundTransparency = 0
             Popup.BorderSizePixel = 1
             Popup.BorderColor3 = Theme.OrangeAccent
-            Popup.ZIndex = 300
+            Popup.ZIndex = 800
             Popup.Parent = ScreenGui
             Instance.new("UICorner", Popup).CornerRadius = UDim.new(0, 8)
 
@@ -573,7 +555,7 @@ function AHHubLib:CreateWindow()
             TopBar.Size = UDim2.new(1, 0, 0, 24)
             TopBar.BackgroundColor3 = Theme.TitleBar
             TopBar.BorderSizePixel = 0
-            TopBar.ZIndex = 301
+            TopBar.ZIndex = 801
             TopBar.Parent = Popup
             Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 8)
             MakeDraggable(TopBar, Popup)
@@ -589,7 +571,7 @@ function AHHubLib:CreateWindow()
             TitleTxt.TextColor3 = Theme.OrangeAccent
             TitleTxt.TextSize = 10
             TitleTxt.TextXAlignment = Enum.TextXAlignment.Left
-            TitleTxt.ZIndex = 302
+            TitleTxt.ZIndex = 802
             TitleTxt.Parent = TopBar
 
             local ScrollSub = Instance.new("ScrollingFrame")
@@ -597,7 +579,7 @@ function AHHubLib:CreateWindow()
             ScrollSub.Position = UDim2.new(0, 4, 0, 28)
             ScrollSub.BackgroundTransparency = 1
             ScrollSub.ScrollBarThickness = 2
-            ScrollSub.ZIndex = 301
+            ScrollSub.ZIndex = 801
             ScrollSub.Parent = Popup
 
             local SubLayout = Instance.new("UIListLayout")
@@ -644,7 +626,10 @@ function AHHubLib:CreateWindow()
                 Gear.ZIndex = 10
                 Gear.Parent = Btn
                 Gear.MouseButton1Click:Connect(function()
-                    OpenFloatingPopup(Btn, configFunc)
+                    task.spawn(function()
+                        task.wait()
+                        OpenFloatingPopup(Btn, configFunc)
+                    end)
                 end)
             end
 
@@ -678,7 +663,7 @@ function AHHubLib:CreateWindow()
             Title.BackgroundTransparency = 1
             Title.Font = Enum.Font.GothamMedium
             Title.Text = text
-            Title.TextColor3 = Theme.TextMain
+            Title.TextColor3 = Theme.TextBright
             Title.TextSize = 11
             Title.TextXAlignment = Enum.TextXAlignment.Left
             Title.Parent = Frame
@@ -711,7 +696,10 @@ function AHHubLib:CreateWindow()
                 Gear.ZIndex = 10
                 Gear.Parent = Frame
                 Gear.MouseButton1Click:Connect(function()
-                    OpenFloatingPopup(Frame, configFunc)
+                    task.spawn(function()
+                        task.wait()
+                        OpenFloatingPopup(Frame, configFunc)
+                    end)
                 end)
             end
 
@@ -767,7 +755,7 @@ function AHHubLib:CreateWindow()
             Title.BackgroundTransparency = 1
             Title.Font = Enum.Font.GothamMedium
             Title.Text = text
-            Title.TextColor3 = Theme.TextMain
+            Title.TextColor3 = Theme.TextBright
             Title.TextSize = 11
             Title.TextXAlignment = Enum.TextXAlignment.Left
             Title.ZIndex = 6
