@@ -1,9 +1,9 @@
 -- =========================================================
--- A&H HUB v1.5.6 - COFFEE LOGO, CIRCULAR CONTROLS & CONFIRMATION
+-- A&H HUB v1.5.7 - NATIVE DRAWING ESP RENDERER API
 -- =========================================================
 
 local AHHubLib = {
-    Version = "1.5.6",
+    Version = "1.5.7",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -12,8 +12,11 @@ local AHHubLib = {
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
 local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
 
 local Theme = {
     Bg = Color3.fromRGB(24, 18, 15),
@@ -94,7 +97,6 @@ function AHHubLib:CreateWindow()
     Window.Parent = ScreenGui
     Instance.new("UICorner", Window).CornerRadius = UDim.new(0, 10)
 
-    -- Tooltip Overhead Label
     local TooltipLabel = Instance.new("TextLabel")
     TooltipLabel.Size = UDim2.new(0, 120, 0, 22)
     TooltipLabel.BackgroundColor3 = Theme.TitleBar
@@ -124,7 +126,6 @@ function AHHubLib:CreateWindow()
         end)
     end
 
-    -- Title Bar
     local TitleBar = Instance.new("Frame")
     TitleBar.Size = UDim2.new(1, 0, 0, 32)
     TitleBar.BackgroundColor3 = Theme.TitleBar
@@ -134,7 +135,6 @@ function AHHubLib:CreateWindow()
     Instance.new("UICorner", TitleBar).CornerRadius = UDim.new(0, 10)
     MakeDraggable(TitleBar, Window)
 
-    -- Cute Coffee Logo / Button on Left
     local CoffeeLogoBtn = Instance.new("TextButton")
     CoffeeLogoBtn.Size = UDim2.new(0, 24, 0, 24)
     CoffeeLogoBtn.Position = UDim2.new(0, 6, 0.5, -12)
@@ -159,9 +159,6 @@ function AHHubLib:CreateWindow()
     WindowTitle.ZIndex = 11
     WindowTitle.Parent = TitleBar
 
-    -- =========================================================
-    -- CIRCULAR WINDOW CONTROLS (CLOSE / MAXIMIZE / MINIMIZE)
-    -- =========================================================
     local ControlsHolder = Instance.new("Frame")
     ControlsHolder.Size = UDim2.new(0, 75, 0, 32)
     ControlsHolder.Position = UDim2.new(1, -80, 0, 0)
@@ -189,13 +186,11 @@ function AHHubLib:CreateWindow()
         return btn
     end
 
-    -- Window State Flags
     local isMinimized = false
     local isMaximized = false
     local savedPosition = DefaultPos
     local savedSize = DefaultSize
 
-    -- Sidebar & Content References
     local Sidebar = Instance.new("Frame")
     Sidebar.Size = UDim2.new(0, 160, 1, -32)
     Sidebar.Position = UDim2.new(0, 0, 0, 32)
@@ -209,10 +204,8 @@ function AHHubLib:CreateWindow()
     ContentContainer.BackgroundTransparency = 1
     ContentContainer.Parent = Window
 
-    -- Confirmation Popup System (Forward Declared)
     local ShowConfirmation
 
-    -- Minimize Button (Yellow style circle)
     MakeCircularButton(Theme.YellowWarn, Color3.fromRGB(240, 190, 80), 0, function()
         isMinimized = not isMinimized
         if isMinimized then
@@ -229,7 +222,6 @@ function AHHubLib:CreateWindow()
         end
     end)
 
-    -- Maximize Button (Green style circle - Full Screen toggle)
     MakeCircularButton(Theme.GreenOk, Color3.fromRGB(90, 220, 110), 22, function()
         if isMinimized then return end
         isMaximized = not isMaximized
@@ -240,7 +232,6 @@ function AHHubLib:CreateWindow()
                 Position = UDim2.new(0, 0, 0, 0),
                 Size = UDim2.new(1, 0, 1, 0)
             })
-            -- Remove corner radius temporarily on full screen for edge-to-edge look
             Window.BorderSizePixel = 0
         else
             Tween(Window, TweenInfo.new(0.2), {
@@ -250,14 +241,12 @@ function AHHubLib:CreateWindow()
         end
     end)
 
-    -- Close Button (Red style circle with Confirmation popup)
     MakeCircularButton(Theme.RedDanger, Color3.fromRGB(240, 80, 80), 44, function()
         ShowConfirmation("Close A&H Hub?", "Are you sure you want to close the user interface?", function()
             ScreenGui:Destroy()
         end)
     end)
 
-    -- Notifications Holder
     local NotificationHolder = Instance.new("Frame")
     NotificationHolder.Size = UDim2.new(0, 240, 1, -40)
     NotificationHolder.Position = UDim2.new(1, -250, 0, 35)
@@ -310,7 +299,6 @@ function AHHubLib:CreateWindow()
         end)
     end
 
-    -- Confirmation Popup System Implementation
     ShowConfirmation = function(title, message, onAccept)
         local Overlay = Instance.new("Frame")
         Overlay.Size = UDim2.new(1, 0, 1, 0)
@@ -385,7 +373,6 @@ function AHHubLib:CreateWindow()
         end)
     end
 
-    -- Global Settings Search Bar
     local SearchBox = Instance.new("TextBox")
     SearchBox.Size = UDim2.new(1, -16, 0, 24)
     SearchBox.Position = UDim2.new(0, 8, 0, 8)
@@ -894,30 +881,217 @@ function AHHubLib:CreateWindow()
 
         local TabObject = CreateElementBuilder(MainTabFrame)
 
-        function TabObject:AddESPHelpers(sectionName)
-            local Sec = TabObject:AddSection(sectionName or "Player ESP Controls")
-            
-            local EspHelpers = {}
-            function EspHelpers:AddEnemyColor(flag, defaultColor, callback)
-                return Sec:AddColorPicker("Enemy Color", flag or "ESP_EnemyColor", defaultColor or Color3.fromRGB(255, 70, 70), callback)
-            end
-            function EspHelpers:AddTeamColor(flag, defaultColor, callback)
-                return Sec:AddColorPicker("Team Color", flag or "ESP_TeamColor", defaultColor or Color3.fromRGB(70, 255, 70), callback)
-            end
-            function EspHelpers:AddToggleKeybind(flag, defaultKey, callback)
-                return Sec:AddKeybind("ESP Master Keybind", flag or "ESP_MasterKey", defaultKey or Enum.KeyCode.F6, callback)
-            end
-            function EspHelpers:AddBoxToggle(flag, callback)
-                return Sec:AddToggle("Render Boxes", flag or "ESP_Boxes", true, "Draws bounding boxes around enemy models", callback)
-            end
-            function EspHelpers:AddHealthToggle(flag, callback)
-                return Sec:AddToggle("Render Health Bars", flag or "ESP_HealthBars", true, "Displays dynamic health indicators", callback)
-            end
-            function EspHelpers:AddTracerToggle(flag, callback)
-                return Sec:AddToggle("Render Snaplines/Tracers", flag or "ESP_Tracers", false, "Draws line indicators towards target positions", callback)
+        -- =========================================================
+        -- NATIVE ESP RENDERER API EXTENSION
+        -- =========================================================
+        function TabObject:AddESPRenderer()
+            local ESPManager = {
+                TrackedPlayers = {},
+                ActiveDrawings = {}
+            }
+
+            local function createDrawing(type, properties)
+                local success, obj = pcall(function()
+                    return Drawing.new(type)
+                end)
+                if success and obj then
+                    for prop, val in pairs(properties) do
+                        obj[prop] = val
+                    end
+                    return obj
+                end
+                return nil
             end
 
-            return EspHelpers
+            function ESPManager:AddPlayer(player)
+                if self.ActiveDrawings[player] then return end
+                
+                local drawings = {
+                    Box = createDrawing("Square", {Thickness = 1, Filled = false, Visible = false}),
+                    BoxOutline = createDrawing("Square", {Thickness = 3, Filled = false, Visible = false, Color = Color3.new(0,0,0)}),
+                    Name = createDrawing("Text", {Size = 13, Center = true, Outline = true, Visible = false, Color = Color3.new(1,1,1)}),
+                    HealthBar = createDrawing("Line", {Thickness = 2, Visible = false}),
+                    HealthBarOutline = createDrawing("Line", {Thickness = 4, Visible = false, Color = Color3.new(0,0,0)}),
+                    Tracer = createDrawing("Line", {Thickness = 1, Visible = false}),
+                    Direction = createDrawing("Line", {Thickness = 1, Visible = false})
+                }
+
+                self.ActiveDrawings[player] = {
+                    Drawings = drawings,
+                    Data = {
+                        Name = true,
+                        Health = true,
+                        Armor = false,
+                        Weapon = false,
+                        Distance = true,
+                        Box = true,
+                        Glow = false,
+                        Tracer = false,
+                        Direction = true,
+                        Marker = false,
+                        ThroughWalls = true,
+                        Color = Color3.fromRGB(255, 50, 50),
+                        MaxDistance = 500
+                    }
+                }
+            end
+
+            function ESPManager:RemovePlayer(player)
+                if self.ActiveDrawings[player] then
+                    for _, drawing in pairs(self.ActiveDrawings[player].Drawings) do
+                        if drawing then
+                            pcall(function() drawing:Remove() end)
+                        end
+                    end
+                    self.ActiveDrawings[player] = nil
+                end
+            end
+
+            function ESPManager:UpdatePlayer(player, data)
+                if not self.ActiveDrawings[player] then
+                    self:AddPlayer(player)
+                end
+                local entry = self.ActiveDrawings[player]
+                if entry and data then
+                    for k, v in pairs(data) do
+                        entry.Data[k] = v
+                    end
+                end
+            end
+
+            function ESPManager:Clear()
+                for player, _ in pairs(self.ActiveDrawings) do
+                    self:RemovePlayer(player)
+                end
+                self.ActiveDrawings = {}
+            end
+
+            -- Automatically hook existing and joining players
+            for _, p in ipairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer then
+                    ESPManager:AddPlayer(p)
+                end
+            end
+            Players.PlayerAdded:Connect(function(p)
+                if p ~= LocalPlayer then
+                    ESPManager:AddPlayer(p)
+                end
+            end)
+            Players.PlayerRemoving:Connect(function(p)
+                ESPManager:RemovePlayer(p)
+            end)
+
+            -- Main Render Loop
+            RunService.RenderStepped:Connect(function()
+                for player, record in pairs(ESPManager.ActiveDrawings) do
+                    local character = player.Character
+                    local drawings = record.Drawings
+                    local cfg = record.Data
+
+                    local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+                    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+
+                    local shouldRender = false
+                    if character and rootPart and humanoid and humanoid.Health > 0 then
+                        local _, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
+                        local dist = (Camera.CFrame.Position - rootPart.Position).Magnitude
+                        if onScreen and dist <= (cfg.MaxDistance or 500) then
+                            shouldRender = true
+                        end
+                    end
+
+                    if not shouldRender then
+                        for _, d in pairs(drawings) do d.Visible = false end
+                    else
+                        local cf, size = character:GetBoundingBox()
+                        local screenPos, onScreen = Camera:WorldToViewportPoint(cf.Position)
+                        
+                        -- Simple viewport box scaling estimation
+                        local scaleFactor = 1 / (screenPos.Z * math.tan(math.rad(Camera.FieldOfView / 2)) * 2) * 1000
+                        local w = math.clamp(size.X * scaleFactor, 15, 300)
+                        local h = math.clamp(size.Y * scaleFactor, 20, 500)
+                        local x = screenPos.X - w / 2
+                        local y = screenPos.Y - h / 2
+
+                        -- Box Rendering
+                        if cfg.Box then
+                            drawings.BoxOutline.Visible = true
+                            drawings.BoxOutline.Position = Vector2.new(x, y)
+                            drawings.BoxOutline.Size = Vector2.new(w, h)
+
+                            drawings.Box.Visible = true
+                            drawings.Box.Position = Vector2.new(x, y)
+                            drawings.Box.Size = Vector2.new(w, h)
+                            drawings.Box.Color = cfg.Color
+                        else
+                            drawings.Box.Visible = false
+                            drawings.BoxOutline.Visible = false
+                        end
+
+                        -- Name / Distance Text
+                        if cfg.Name then
+                            drawings.Name.Visible = true
+                            drawings.Name.Position = Vector2.new(screenPos.X, y - 18)
+                            local textString = player.Name
+                            if cfg.Distance then
+                                local dist = math.floor((Camera.CFrame.Position - rootPart.Position).Magnitude)
+                                textString = textString .. " [" .. dist .. "m]"
+                            end
+                            drawings.Name.Text = textString
+                            drawings.Name.Color = cfg.Color
+                        else
+                            drawings.Name.Visible = false
+                        end
+
+                        -- Health Bar
+                        if cfg.Health and humanoid then
+                            local healthPct = math.clamp(humanoid.Health / humanoid.MaxHealth, 0, 1)
+                            local barHeight = h * healthPct
+                            
+                            drawings.HealthBarOutline.Visible = true
+                            drawings.HealthBarOutline.From = Vector2.new(x - 6, y + h)
+                            drawings.HealthBarOutline.To = Vector2.new(x - 6, y)
+
+                            drawings.HealthBar.Visible = true
+                            drawings.HealthBar.From = Vector2.new(x - 6, y + h)
+                            drawings.HealthBar.To = Vector2.new(x - 6, y + (h - barHeight))
+                            drawings.HealthBar.Color = Color3.fromRGB(255 - (healthPct * 255), healthPct * 255, 0)
+                        else
+                            drawings.HealthBar.Visible = false
+                            drawings.HealthBarOutline.Visible = false
+                        end
+
+                        -- Tracer
+                        if cfg.Tracer then
+                            drawings.Tracer.Visible = true
+                            drawings.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+                            drawings.Tracer.To = Vector2.new(screenPos.X, y + h)
+                            drawings.Tracer.Color = cfg.Color
+                        else
+                            drawings.Tracer.Visible = false
+                        end
+
+                        -- Direction Line
+                        if cfg.Direction and rootPart then
+                            local lookVector = rootPart.CFrame.LookVector
+                            local targetPoint = rootPart.Position + (lookVector * 5)
+                            local tScreenPos, tOnScreen = Camera:WorldToViewportPoint(targetPoint)
+                            if tOnScreen then
+                                drawings.Direction.Visible = true
+                                drawings.Direction.From = Vector2.new(screenPos.X, screenPos.Y)
+                                drawings.Direction.To = Vector2.new(tScreenPos.X, tScreenPos.Y)
+                                drawings.Direction.Color = cfg.Color
+                            else
+                                drawings.Direction.Visible = false
+                            end
+                        else
+                            drawings.Direction.Visible = false
+                        end
+                    end
+                end
+            end)
+
+            return ESPManager
         end
 
         return TabObject
