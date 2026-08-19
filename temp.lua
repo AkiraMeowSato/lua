@@ -1,11 +1,11 @@
 -- =========================================================================
--- A&H HUB v1.5.8 - FULLY FEATURED NATIVE DRAWING ESP API & UI LIBRARY
--- Updated with: Resizable Windows, Collapsible Toggle Sub-Menus, and
--- Cosmetic/Accessory Attachment Elements (Integrated directly).
+-- A&H HUB v1.6.0 - FULLY FEATURED NATIVE DRAWING ESP API & UI LIBRARY
+-- Updated with: Resizable Windows, Collapsible Toggle Sub-Menus, 
+-- Cosmetic/Accessory Attachment Elements, and AddESPForRenderer.
 -- =========================================================================
 
 local AHHubLib = {
-    Version = "1.5.9",
+    Version = "1.6.0",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -99,7 +99,6 @@ function AHHubLib:CreateWindow()
     Window.Parent = ScreenGui
     Instance.new("UICorner", Window).CornerRadius = UDim.new(0, 10)
 
-    -- Added Window Resizing Handle Support (Bottom-Right)
     local ResizeHandle = Instance.new("TextButton")
     ResizeHandle.Name = "ResizeHandle"
     ResizeHandle.Size = UDim2.new(0, 15, 0, 15)
@@ -559,7 +558,6 @@ function AHHubLib:CreateWindow()
             return ButtonController
         end
 
-        -- Updated Toggle with Collapsible Sub-menus support
         function Elements:AddToggle(text, flag, defaultState, tooltipText, callback)
             callback = callback or function() end
             local toggled = defaultState or false
@@ -595,13 +593,12 @@ function AHHubLib:CreateWindow()
             Switch.Parent = Frame
             Instance.new("UICorner", Switch).CornerRadius = UDim.new(1, 0)
 
-            -- Collapsible Sub-menu Container inside Toggle
             local SubContainer = Instance.new("Frame")
             SubContainer.Name = "SubMenuContainer"
             SubContainer.Size = UDim2.new(1, 0, 0, 0)
             SubContainer.BackgroundTransparency = 1
             SubContainer.Visible = toggled
-            SubContainer.Parent = PageView -- Append structure dynamically or inline
+            SubContainer.Parent = PageView
 
             local SubLayout = Instance.new("UIListLayout")
             SubLayout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -628,7 +625,11 @@ function AHHubLib:CreateWindow()
             return ToggleObject
         end
 
-        -- Added Cosmetic Attachment Element (Custom Hats & Meshes)
+        -- Fully Integrated AddESPForRenderer Method Fix
+        function Elements:AddESPForRenderer(espName, callback)
+            return self:AddToggle("Enable " .. espName, "ESP_" .. espName, false, "Toggle native ESP renderer for " .. espName, callback)
+        end
+
         function Elements:AddCosmeticAccessory(assetName, assetId)
             local Btn = Instance.new("TextButton")
             Btn.Size = UDim2.new(1, -10, 0, 32)
