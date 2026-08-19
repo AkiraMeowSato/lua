@@ -35,7 +35,8 @@ local AHHubLib = {
     ActiveDrawings = {},
     ActiveHighlights = {},
     Notifications = {},
-    Unloaded = false
+    Unloaded = false,
+    Diagnostics = {} -- Properly initialized table
 }
 
 -- =========================================================================
