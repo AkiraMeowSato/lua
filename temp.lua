@@ -1,9 +1,9 @@
 -- =========================================================
--- A&H HUB v1.5.3 - FULLY FIXED UI SUITE & ESP HELPERS
+-- A&H HUB v1.5.4 - WITH WINDOW CONTROLS (CLOSE/MIN/MAX)
 -- =========================================================
 
 local AHHubLib = {
-    Version = "1.5.3",
+    Version = "1.5.4",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -83,10 +83,13 @@ function AHHubLib:CreateWindow()
     ScreenGui.IgnoreGuiInset = true
     ScreenGui.Parent = ParentGui
 
+    local DefaultSize = UDim2.new(0, 850, 0, 520)
+    local DefaultPos = UDim2.new(0.5, -425, 0.5, -260)
+
     local Window = Instance.new("Frame")
     Window.Name = "MainWindow"
-    Window.Size = UDim2.new(0, 850, 0, 520)
-    Window.Position = UDim2.new(0.5, -425, 0.5, -260)
+    Window.Size = DefaultSize
+    Window.Position = DefaultPos
     Window.BackgroundColor3 = Theme.Bg
     Window.BorderSizePixel = 0
     Window.ClipsDescendants = true
@@ -107,7 +110,6 @@ function AHHubLib:CreateWindow()
     TooltipLabel.Parent = ScreenGui
     Instance.new("UICorner", TooltipLabel).CornerRadius = UDim.new(0, 4)
 
-    -- FIX FOR LINE 118: MouseMoved sends numbers (x, y), not an InputObject
     local function BindTooltip(object, text)
         if not text or text == "" then return end
         object.MouseEnter:Connect(function()
@@ -144,7 +146,108 @@ function AHHubLib:CreateWindow()
     WindowTitle.TextXAlignment = Enum.TextXAlignment.Left
     WindowTitle.Parent = TitleBar
 
-    -- Notifications Holder Container
+    -- =========================================================
+    -- WINDOW CONTROLS CONTAINER (CLOSE / MAXIMIZE / MINIMIZE)
+    -- =========================================================
+    local ControlsHolder = Instance.new("Frame")
+    ControlsHolder.Size = UDim2.new(0, 90, 1, 0)
+    ControlsHolder.Position = UDim2.new(1, -95, 0, 0)
+    ControlsHolder.BackgroundTransparency = 1
+    ControlsHolder.Parent = TitleBar
+
+    local ControlsLayout = Instance.new("UIListLayout")
+    ControlsLayout.FillDirection = Enum.FillDirection.Horizontal
+    ControlsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+    ControlsLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+    ControlsLayout.Padding = UDim.new(0, 4)
+    ControlsLayout.Parent = ControlsHolder
+
+    local function MakeWindowButton(text, color, hoverColor)
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(0, 24, 0, 20)
+        btn.BackgroundColor3 = color
+        btn.Font = Enum.Font.GothamBold
+        btn.Text = text
+        btn.TextColor3 = Theme.TextBright
+        btn.TextSize = 12
+        btn.Parent = ControlsHolder
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+
+        btn.MouseEnter:Connect(function()
+            Tween(btn, TweenInfo.new(0.1), {BackgroundColor3 = hoverColor})
+        end)
+        btn.MouseLeave:Connect(function()
+            Tween(btn, TweenInfo.new(0.1), {BackgroundColor3 = color})
+        end)
+        return btn
+    end
+
+    local MinimizeBtn = MakeWindowButton("—", Theme.Sidebar, Theme.TabSelected)
+    local MaximizeBtn = MakeWindowButton("□", Theme.Sidebar, Theme.TabSelected)
+    local CloseBtn    = MakeWindowButton("✕", Color3.fromRGB(180, 50, 50), Theme.RedDanger)
+
+    -- Window State Flags
+    local isMinimized = false
+    local isMaximized = false
+    local savedPosition = DefaultPos
+    local savedSize = DefaultSize
+
+    -- Sidebar & Content References
+    local Sidebar = Instance.new("Frame")
+    Sidebar.Size = UDim2.new(0, 160, 1, -32)
+    Sidebar.Position = UDim2.new(0, 0, 0, 32)
+    Sidebar.BackgroundColor3 = Theme.Sidebar
+    Sidebar.BorderSizePixel = 0
+    Sidebar.Parent = Window
+
+    local ContentContainer = Instance.new("Frame")
+    ContentContainer.Size = UDim2.new(1, -170, 1, -37)
+    ContentContainer.Position = UDim2.new(0, 165, 0, 32)
+    ContentContainer.BackgroundTransparency = 1
+    ContentContainer.Parent = Window
+
+    -- Button Logic
+    MinimizeBtn.MouseButton1Click:Connect(function()
+        isMinimized = not isMinimized
+        if isMinimized then
+            if not isMaximized then
+                savedSize = Window.Size
+            end
+            Sidebar.Visible = false
+            ContentContainer.Visible = false
+            Tween(Window, TweenInfo.new(0.2), {Size = UDim2.new(Window.Size.X.Scale, Window.Size.X.Offset, 0, 32)})
+        else
+            Tween(Window, TweenInfo.new(0.2), {Size = isMaximized and UDim2.new(1, -40, 1, -40) or savedSize})
+            task.delay(0.15, function()
+                Sidebar.Visible = true
+                ContentContainer.Visible = true
+            end)
+        end
+    end)
+
+    MaximizeBtn.MouseButton1Click:Connect(function()
+        if isMinimized then return end
+        isMaximized = not isMaximized
+        if isMaximized then
+            savedPosition = Window.Position
+            savedSize = Window.Size
+            Tween(Window, TweenInfo.new(0.2), {
+                Position = UDim2.new(0, 20, 0, 20),
+                Size = UDim2.new(1, -40, 1, -40)
+            })
+        else
+            Tween(Window, TweenInfo.new(0.2), {
+                Position = savedPosition,
+                Size = savedSize
+            })
+        end
+    end)
+
+    CloseBtn.MouseButton1Click:Connect(function()
+        ScreenGui:Destroy()
+    end)
+
+    -- Notifications Holder
     local NotificationHolder = Instance.new("Frame")
     NotificationHolder.Size = UDim2.new(0, 240, 1, -40)
     NotificationHolder.Position = UDim2.new(1, -250, 0, 35)
@@ -272,14 +375,6 @@ function AHHubLib:CreateWindow()
         end)
     end
 
-    -- Sidebar Container
-    local Sidebar = Instance.new("Frame")
-    Sidebar.Size = UDim2.new(0, 160, 1, -32)
-    Sidebar.Position = UDim2.new(0, 0, 0, 32)
-    Sidebar.BackgroundColor3 = Theme.Sidebar
-    Sidebar.BorderSizePixel = 0
-    Sidebar.Parent = Window
-
     -- Global Settings Search Bar
     local SearchBox = Instance.new("TextBox")
     SearchBox.Size = UDim2.new(1, -16, 0, 24)
@@ -307,13 +402,7 @@ function AHHubLib:CreateWindow()
     NavLayout.Padding = UDim.new(0, 4)
     NavLayout.Parent = NavHolder
 
-    local ContentContainer = Instance.new("Frame")
-    ContentContainer.Size = UDim2.new(1, -170, 1, -37)
-    ContentContainer.Position = UDim2.new(0, 165, 0, 32)
-    ContentContainer.BackgroundTransparency = 1
-    ContentContainer.Parent = Window
-
-    -- Search Bar Logic
+    -- Search Bar Filtering Logic
     SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
         local query = string.lower(SearchBox.Text)
         for _, page in ipairs(ContentContainer:GetChildren()) do
@@ -348,7 +437,6 @@ function AHHubLib:CreateWindow()
     local function CreateElementBuilder(PageView)
         local Elements = {}
 
-        -- FIX FOR LINE 353: Strictly verify PageView is a ScrollingFrame before touching CanvasSize
         local function RegisterScrollAutoResize()
             if PageView:IsA("ScrollingFrame") then
                 local layout = PageView:FindFirstChildOfClass("UIListLayout")
@@ -361,7 +449,7 @@ function AHHubLib:CreateWindow()
         end
         RegisterScrollAutoResize()
 
-        -- 1. ADD SECTION (WITH COLLAPSIBLE VISIBILITY)
+        -- 1. ADD SECTION
         function Elements:AddSection(sectionTitle)
             local SecFrame = Instance.new("Frame")
             SecFrame.Size = UDim2.new(1, -10, 0, 26)
@@ -413,7 +501,7 @@ function AHHubLib:CreateWindow()
             return CreateElementBuilder(Container)
         end
 
-        -- 2. BUTTON (SUPPORTING DISABLED & LOADING STATES)
+        -- 2. BUTTON
         function Elements:AddButton(text, tooltipText, callback)
             callback = callback or function() end
             local Btn = Instance.new("TextButton")
@@ -459,7 +547,7 @@ function AHHubLib:CreateWindow()
             return ButtonController
         end
 
-        -- 3. RELIABLE TOGGLE
+        -- 3. TOGGLE
         function Elements:AddToggle(text, flag, defaultState, tooltipText, callback)
             callback = callback or function() end
             local toggled = defaultState or false
@@ -510,7 +598,7 @@ function AHHubLib:CreateWindow()
             return ToggleObject
         end
 
-        -- 4. LIVE SLIDER
+        -- 4. SLIDER
         function Elements:AddSlider(text, flag, min, max, default, tooltipText, callback)
             callback = callback or function() end
             local val = default or min
@@ -812,7 +900,6 @@ function AHHubLib:CreateWindow()
 
         local TabObject = CreateElementBuilder(MainTabFrame)
 
-        -- DEDICATED ESP WRAPPER BUILDER
         function TabObject:AddESPHelpers(sectionName)
             local Sec = TabObject:AddSection(sectionName or "Player ESP Controls")
             
