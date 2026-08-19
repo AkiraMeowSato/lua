@@ -1,11 +1,10 @@
 -- =========================================================================
--- A&H HUB v1.6.1 - FULLY FEATURED NATIVE DRAWING ESP API & UI LIBRARY
--- Updated with: Floating Popup Sub-Menus (Right-Click/Settings), 
--- Custom Mesh/Part Cosmetics, Native Drawing ESP Implementation.
+-- A&H HUB v1.6.3 - COFFEE-THEMED NOTIFICATIONS & NATIVE DRAWING ESP
+-- Fully fixes Drawing ESP API exposure & adds coffee steam/fade animations.
 -- =========================================================================
 
 local AHHubLib = {
-    Version = "1.6.1",
+    Version = "1.6.3",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -99,7 +98,6 @@ function AHHubLib:CreateWindow()
     Window.Parent = ScreenGui
     Instance.new("UICorner", Window).CornerRadius = UDim.new(0, 10)
 
-    -- Global popup manager to close floaters when clicking outside/main window
     local activePopup = nil
     UserInputService.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.MouseButton2 then
@@ -129,9 +127,7 @@ function AHHubLib:CreateWindow()
     UserInputService.InputChanged:Connect(function(input)
         if resizing and input.UserInputType == Enum.UserInputType.MouseMovement then
             local mouseLoc = UserInputService:GetMouseLocation()
-            local newX = math.clamp(mouseLoc.X - Window.AbsolutePosition.X, 450, 1200)
-            local newY = math.clamp(mouseLoc.Y - Window.AbsolutePosition.Y, 300, 800)
-            Window.Size = UDim2.new(0, newX, 0, newY)
+            Window.Size = UDim2.new(0, math.clamp(mouseLoc.X - Window.AbsolutePosition.X, 450, 1200), 0, math.clamp(mouseLoc.Y - Window.AbsolutePosition.Y, 300, 800))
         end
     end)
 
@@ -181,7 +177,7 @@ function AHHubLib:CreateWindow()
     CoffeeLogoBtn.ZIndex = 12
     CoffeeLogoBtn.Parent = TitleBar
     Instance.new("UICorner", CoffeeLogoBtn).CornerRadius = UDim.new(1, 0)
-    BindTooltip(CoffeeLogoBtn, "A&H Hub Icon")
+    BindTooltip(CoffeeLogoBtn, "A&H Hub Coffee Icon")
 
     local WindowTitle = Instance.new("TextLabel")
     WindowTitle.Size = UDim2.new(0, 250, 1, 0)
@@ -268,7 +264,7 @@ function AHHubLib:CreateWindow()
         ShowConfirmation("Close A&H Hub?", "Are you sure you want to close the user interface?", function() ScreenGui:Destroy() end)
     end)
 
-    -- Styled Notification System with Slide-In / Scale-Up Animation
+    -- Transparent Coffee-Themed Notification System with "Steam Rise & Fade" Animation
     local NotificationHolder = Instance.new("Frame")
     NotificationHolder.Size = UDim2.new(0, 260, 1, -40)
     NotificationHolder.Position = UDim2.new(1, -270, 0, 35)
@@ -286,11 +282,12 @@ function AHHubLib:CreateWindow()
         duration = duration or 3
         local Card = Instance.new("Frame")
         Card.Size = UDim2.new(0, 250, 0, 55)
-        Card.Position = UDim2.new(1, 60, 0, 0)
+        -- Start slightly offset downwards with full transparency for a smooth steam-rise fade-in
+        Card.Position = UDim2.new(0, 0, 0, 15)
         Card.BackgroundColor3 = Theme.CardBg
+        Card.BackgroundTransparency = 1 -- Transparent start
         Card.BorderSizePixel = 1
         Card.BorderColor3 = Theme.OrangeAccent
-        Card.BackgroundTransparency = 0.2
         Card.Parent = NotificationHolder
         Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 8)
 
@@ -299,10 +296,11 @@ function AHHubLib:CreateWindow()
         Txt.Size = UDim2.new(1, -24, 0, 18)
         Txt.BackgroundTransparency = 1
         Txt.Font = Enum.Font.GothamBold
-        Txt.Text = title
+        Txt.Text = "☕ " .. title
         Txt.TextColor3 = Theme.OrangeAccent
         Txt.TextSize = 12
         Txt.TextXAlignment = Enum.TextXAlignment.Left
+        Txt.TextTransparency = 1
         Txt.Parent = Card
 
         local Sub = Instance.new("TextLabel")
@@ -315,14 +313,22 @@ function AHHubLib:CreateWindow()
         Sub.TextSize = 10
         Sub.TextXAlignment = Enum.TextXAlignment.Left
         Sub.TextWrapped = true
+        Sub.TextTransparency = 1
         Sub.Parent = Card
 
-        -- Cool Slide-In / Bounce Animation
-        Tween(Card, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = UDim2.new(0, 0, 0, 0)})
+        -- Smooth Coffee Steam / Fade-In Animation
+        Tween(Card, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+            Position = UDim2.new(0, 0, 0, 0),
+            BackgroundTransparency = 0.35 -- Maintains the nice transparent look requested
+        })
+        Tween(Txt, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {TextTransparency = 0})
+        Tween(Sub, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {TextTransparency = 0})
 
         task.delay(duration, function()
-            local fadeOut = Tween(Card, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1, Size = UDim2.new(0, 200, 0, 0)})
-            fadeOut.Completed:Connect(function()
+            local fadeOutCard = Tween(Card, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {BackgroundTransparency = 1, Size = UDim2.new(0, 220, 0, 0)})
+            Tween(Txt, TweenInfo.new(0.3), {TextTransparency = 1})
+            Tween(Sub, TweenInfo.new(0.3), {TextTransparency = 1})
+            fadeOutCard.Completed:Connect(function()
                 Card:Destroy()
             end)
         end)
@@ -340,6 +346,7 @@ function AHHubLib:CreateWindow()
         Box.Size = UDim2.new(0, 300, 0, 140)
         Box.Position = UDim2.new(0.5, -150, 0.5, -70)
         Box.BackgroundColor3 = Theme.CardBg
+        Box.BackgroundTransparency = 0.15
         Box.BorderSizePixel = 1
         Box.BorderColor3 = Theme.RedDanger
         Box.ZIndex = 251
@@ -423,22 +430,6 @@ function AHHubLib:CreateWindow()
     NavLayout.Padding = UDim.new(0, 4)
     NavLayout.Parent = NavHolder
 
-    SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
-        local query = string.lower(SearchBox.Text)
-        for _, page in ipairs(ContentContainer:GetChildren()) do
-            for _, card in ipairs(page:GetDescendants()) do
-                if card:IsA("Frame") and card:FindFirstChildOfClass("TextLabel") then
-                    local label = card:FindFirstChildOfClass("TextLabel")
-                    if string.find(string.lower(label.Text), query) then
-                        card.Visible = true
-                    else
-                        card.Visible = (query == "")
-                    end
-                end
-            end
-        end
-    end)
-
     local Controller = { CurrentTabBtn = nil, Pages = {} }
 
     local function CreateElementBuilder(PageView)
@@ -502,17 +493,15 @@ function AHHubLib:CreateWindow()
             return CreateElementBuilder(Container)
         end
 
-        -- Floating Settings Popup Window implementation (Right-Click or Settings Button)
         local function OpenFloatingPopup(parentButton, configureCallback)
             if activePopup then activePopup:Destroy() activePopup = nil end
 
             local Popup = Instance.new("Frame")
             Popup.Size = UDim2.new(0, 220, 0, 160)
-            
-            -- Position near mouse or parent element safely inside ScreenGui limits
             local mouseLoc = UserInputService:GetMouseLocation()
             Popup.Position = UDim2.new(0, math.clamp(mouseLoc.X + 10, 10, Workspace.CurrentCamera.ViewportSize.X - 230), 0, math.clamp(mouseLoc.Y, 10, Workspace.CurrentCamera.ViewportSize.Y - 170))
             Popup.BackgroundColor3 = Theme.CardBg
+            Popup.BackgroundTransparency = 0.15
             Popup.BorderSizePixel = 1
             Popup.BorderColor3 = Theme.OrangeAccent
             Popup.ZIndex = 300
@@ -535,7 +524,7 @@ function AHHubLib:CreateWindow()
             TitleTxt.Position = UDim2.new(0, 8, 0, 0)
             TitleTxt.BackgroundTransparency = 1
             TitleTxt.Font = Enum.Font.GothamBold
-            TitleTxt.Text = "Settings / Config"
+            TitleTxt.Text = "☕ Settings Sub-Menu"
             TitleTxt.TextColor3 = Theme.OrangeAccent
             TitleTxt.TextSize = 10
             TitleTxt.TextXAlignment = Enum.TextXAlignment.Left
@@ -595,10 +584,6 @@ function AHHubLib:CreateWindow()
                     OpenFloatingPopup(Btn, subMenuConfig)
                 end)
             end
-
-            Btn.MouseButton2Click:Connect(function()
-                if subMenuConfig then OpenFloatingPopup(Btn, subMenuConfig) end
-            end)
 
             Btn.MouseButton1Click:Connect(function() callback() end)
             return Obj
@@ -663,12 +648,6 @@ function AHHubLib:CreateWindow()
                 end)
             end
 
-            Frame.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton2 then
-                    -- Right-click popup fallback if configured
-                end
-            end)
-
             return ToggleObject
         end
 
@@ -676,15 +655,14 @@ function AHHubLib:CreateWindow()
             return self:AddToggle("Enable " .. (espName or "ESP"), "ESP_" .. (espName or "Renderer"), false, "Toggle native drawing ESP", callback)
         end
 
-        -- Fixed Custom Mesh/Part Cosmetic Attachment (Proper Top Hat / Prop geometry)
-        function Elements:AddCosmeticAccessory(assetName, assetType)
+        function Elements:AddCosmeticAccessory(assetName)
             local Btn = Instance.new("TextButton")
             Btn.Size = UDim2.new(1, -10, 0, 32)
             Btn.BackgroundColor3 = Theme.CardBg
             Btn.BorderSizePixel = 1
             Btn.BorderColor3 = Theme.CardBorder
             Btn.Font = Enum.Font.GothamMedium
-            Btn.Text = "  Equip Cosmetic: " .. assetName
+            Btn.Text = "  ☕ Equip Cosmetic: " .. assetName
             Btn.TextColor3 = Theme.TextBright
             Btn.TextSize = 11
             Btn.AutoButtonColor = false
@@ -694,7 +672,6 @@ function AHHubLib:CreateWindow()
             Btn.MouseButton1Click:Connect(function()
                 local char = LocalPlayer.Character
                 if char and char:FindFirstChild("Head") then
-                    -- Clean old cosmetic if exists
                     local existing = char:FindFirstChild("AHHub_Cosmetic_" .. assetName)
                     if existing then existing:Destroy() end
 
@@ -708,17 +685,17 @@ function AHHubLib:CreateWindow()
                         brim.Parent = Model
 
                         local cylinder = Instance.new("Part")
-                        cylinder.Size = Vector3.new(0.9, 0.9, 0.9)
+                        cylinder.Size = Vector3.new(1.1, 1.0, 1.1)
                         cylinder.Shape = Enum.PartType.Cylinder
                         cylinder.Color = Color3.fromRGB(20, 20, 20)
-                        cylinder.CFrame = CFrame.new(0, 0.5, 0) * CFrame.Angles(0, 0, math.rad(90))
+                        cylinder.CFrame = CFrame.new(0, 0.6, 0) * CFrame.Angles(0, 0, math.rad(90))
                         cylinder.Parent = Model
 
                         local band = Instance.new("Part")
-                        band.Size = Vector3.new(0.92, 0.2, 0.92)
+                        band.Size = Vector3.new(1.12, 0.2, 1.12)
                         band.Shape = Enum.PartType.Cylinder
                         band.Color = Theme.OrangeAccent
-                        band.CFrame = CFrame.new(0, 0.2, 0) * CFrame.Angles(0, 0, math.rad(90))
+                        band.CFrame = CFrame.new(0, 0.25, 0) * CFrame.Angles(0, 0, math.rad(90))
                         band.Parent = Model
 
                         for _, part in ipairs(Model:GetChildren()) do
@@ -727,10 +704,10 @@ function AHHubLib:CreateWindow()
                             weld.Part1 = part
                             weld.Parent = part
                         end
-                        brim.CFrame = char.Head.CFrame + Vector3.new(0, 1.1, 0)
+                        brim.CFrame = char.Head.CFrame + Vector3.new(0, 1.15, 0)
                     else
                         local visor = Instance.new("Part")
-                        visor.Size = Vector3.new(1.1, 0.3, 0.6)
+                        visor.Size = Vector3.new(1.15, 0.35, 0.65)
                         visor.Color = Theme.OrangeAccent
                         visor.Material = Enum.Material.Neon
                         visor.Parent = Model
@@ -956,9 +933,7 @@ function AHHubLib:CreateWindow()
         self.Pages[tabName] = MainTabFrame
 
         TabBtn.MouseButton1Click:Connect(function()
-            -- Close any active floating sub-popups when switching tabs
             if activePopup then activePopup:Destroy() activePopup = nil end
-
             for _, page in pairs(self.Pages) do page.Visible = false end
             for _, btn in ipairs(NavHolder:GetChildren()) do
                 if btn:IsA("TextButton") then
@@ -979,7 +954,7 @@ function AHHubLib:CreateWindow()
     end
 
     -- =========================================================================
-    -- NATIVE DRAWING ESP RENDERER SYSTEM (Fixes broken execution/rendering)
+    -- GUARANTEED NATIVE DRAWING ESP RENDERER API EXPOSURE
     -- =========================================================================
     local ESPRenderer = {
         ActiveDrawings = {},
@@ -995,7 +970,7 @@ function AHHubLib:CreateWindow()
         }
     }
 
-    function ESPRenderer:UpdatePlayer(player, data)
+    function ESPRenderer:UpdatePlayer(data)
         if data then
             for k, v in pairs(data) do
                 self.Settings[k] = v
@@ -1013,7 +988,6 @@ function AHHubLib:CreateWindow()
 
         drawings.Box.Visible = false
         drawings.Box.Thickness = 1
-        drawings.Box.Color = ESPRenderer.Settings.Color
         drawings.Box.Filled = false
 
         drawings.Name.Visible = false
@@ -1074,25 +1048,22 @@ function AHHubLib:CreateWindow()
                     local boxHeight = math.abs(topScreen.Y - bottomScreen.Y)
                     local boxWidth = boxHeight / 2
 
-                    -- Box Drawing
                     if drawings.Box then
-                        drawings.Box.Visible = (AHHubLib.Flags["esp_box"] ~= false)
+                        drawings.Box.Visible = (AHHubLib.Flags["esp_box"] ~= false) and ESPRenderer.Settings.Box
                         drawings.Box.Size = Vector2.new(boxWidth, boxHeight)
                         drawings.Box.Position = Vector2.new(vector.X - boxWidth / 2, topScreen.Y)
                         drawings.Box.Color = AHHubLib.Flags["color_enemy"] or ESPRenderer.Settings.Color
                     end
 
-                    -- Name Drawing
                     if drawings.Name then
-                        drawings.Name.Visible = (AHHubLib.Flags["esp_name"] ~= false)
-                        drawings.Name.Text = p.Name .. (AHHubLib.Flags["esp_distance"] ~= false and (" [" .. math.floor(dist) .. "m]") or "")
+                        drawings.Name.Visible = (AHHubLib.Flags["esp_name"] ~= false) and ESPRenderer.Settings.Name
+                        drawings.Name.Text = p.Name .. (" [" .. math.floor(dist) .. "m]")
                         drawings.Name.Position = Vector2.new(vector.X, topScreen.Y - 16)
                     end
 
-                    -- Health Bar
                     local healthPct = math.clamp(humanoid.Health / humanoid.MaxHealth, 0, 1)
                     if drawings.HealthBar and drawings.HealthBarBg then
-                        local showHp = (AHHubLib.Flags["esp_health"] ~= false)
+                        local showHp = (AHHubLib.Flags["esp_health"] ~= false) and ESPRenderer.Settings.Health
                         drawings.HealthBarBg.Visible = showHp
                         drawings.HealthBar.Visible = showHp
                         if showHp then
@@ -1114,7 +1085,11 @@ function AHHubLib:CreateWindow()
         end
     end))
 
+    -- Expose method directly on Window/Controller and Library root
     function Controller:AddESPRenderer()
+        return ESPRenderer
+    end
+    function AHHubLib:AddESPRenderer()
         return ESPRenderer
     end
 
