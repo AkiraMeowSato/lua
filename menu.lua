@@ -7,7 +7,13 @@
 
 
 
--- Fatality V.1
+v.2
+
+
+
+
+
+
 
 
 
@@ -45,7 +51,7 @@ local AHHubLib = {
     ActiveHighlights = {},
     Notifications = {},
     Unloaded = false,
-    Diagnostics = {} -- Properly initialized table
+    Diagnostics = {}
 }
 
 -- =========================================================================
