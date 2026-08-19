@@ -1,5 +1,5 @@
 -- =========================================================================
--- A&H HUB v1.9.7 - ULTIMATE COMPREHENSIVE TEST & LIBRARY SCRIPT
+-- A&H HUB v1.9.8 - ULTIMATE COMPREHENSIVE TEST & LIBRARY SCRIPT
 -- =========================================================================
 
 local AHHubLib = {
