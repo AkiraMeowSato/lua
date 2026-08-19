@@ -1,10 +1,10 @@
 -- =========================================================================
--- A&H HUB v1.6.3 - COFFEE-THEMED NOTIFICATIONS & NATIVE DRAWING ESP
--- Fully fixes Drawing ESP API exposure & adds coffee steam/fade animations.
+-- A&H HUB v1.6.4 - POLISHED POPUPS & ROBLOX CATALOG ACCESSORIES
+-- Fixes popup closure on slider drag & implements Roblox Catalog Asset IDs.
 -- =========================================================================
 
 local AHHubLib = {
-    Version = "1.6.3",
+    Version = "1.6.4",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -15,6 +15,7 @@ local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
+local InsertService = game:GetService("InsertService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
@@ -99,11 +100,22 @@ function AHHubLib:CreateWindow()
     Instance.new("UICorner", Window).CornerRadius = UDim.new(0, 10)
 
     local activePopup = nil
+    
+    -- Improved click-away check that ignores interactions inside active popup frames
     UserInputService.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.MouseButton2 then
             if activePopup and activePopup.Parent then
-                activePopup:Destroy()
-                activePopup = nil
+                local mousePos = UserInputService:GetMouseLocation()
+                local absPos = activePopup.AbsolutePosition
+                local absSize = activePopup.AbsoluteSize
+                
+                local insidePopup = (mousePos.X >= absPos.X and mousePos.X <= absPos.X + absSize.X and
+                                     mousePos.Y >= absPos.Y and mousePos.Y <= absPos.Y + absSize.Y)
+                
+                if not insidePopup then
+                    activePopup:Destroy()
+                    activePopup = nil
+                end
             end
         end
     end)
@@ -264,7 +276,6 @@ function AHHubLib:CreateWindow()
         ShowConfirmation("Close A&H Hub?", "Are you sure you want to close the user interface?", function() ScreenGui:Destroy() end)
     end)
 
-    -- Transparent Coffee-Themed Notification System with "Steam Rise & Fade" Animation
     local NotificationHolder = Instance.new("Frame")
     NotificationHolder.Size = UDim2.new(0, 260, 1, -40)
     NotificationHolder.Position = UDim2.new(1, -270, 0, 35)
@@ -282,10 +293,9 @@ function AHHubLib:CreateWindow()
         duration = duration or 3
         local Card = Instance.new("Frame")
         Card.Size = UDim2.new(0, 250, 0, 55)
-        -- Start slightly offset downwards with full transparency for a smooth steam-rise fade-in
         Card.Position = UDim2.new(0, 0, 0, 15)
         Card.BackgroundColor3 = Theme.CardBg
-        Card.BackgroundTransparency = 1 -- Transparent start
+        Card.BackgroundTransparency = 1
         Card.BorderSizePixel = 1
         Card.BorderColor3 = Theme.OrangeAccent
         Card.Parent = NotificationHolder
@@ -316,10 +326,9 @@ function AHHubLib:CreateWindow()
         Sub.TextTransparency = 1
         Sub.Parent = Card
 
-        -- Smooth Coffee Steam / Fade-In Animation
         Tween(Card, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
             Position = UDim2.new(0, 0, 0, 0),
-            BackgroundTransparency = 0.35 -- Maintains the nice transparent look requested
+            BackgroundTransparency = 0.35
         })
         Tween(Txt, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {TextTransparency = 0})
         Tween(Sub, TweenInfo.new(0.4, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {TextTransparency = 0})
@@ -567,10 +576,8 @@ function AHHubLib:CreateWindow()
             Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
             BindTooltip(Btn, tooltipText)
 
-            local subMenuConfig = nil
             local Obj = {}
             function Obj:AddSubMenu(configFunc)
-                subMenuConfig = configFunc
                 local Gear = Instance.new("TextButton")
                 Gear.Size = UDim2.new(0, 24, 0, 24)
                 Gear.Position = UDim2.new(1, -28, 0.5, -12)
@@ -581,7 +588,7 @@ function AHHubLib:CreateWindow()
                 Gear.TextSize = 12
                 Gear.Parent = Btn
                 Gear.MouseButton1Click:Connect(function()
-                    OpenFloatingPopup(Btn, subMenuConfig)
+                    OpenFloatingPopup(Btn, configFunc)
                 end)
             end
 
@@ -669,58 +676,39 @@ function AHHubLib:CreateWindow()
             Btn.Parent = PageView
             Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
 
+            -- Official Roblox Catalog Asset IDs for reliable loading
+            local assetIds = {
+                ["Top Hat"] = 1029017,
+                ["Debug Visor"] = 139151241
+            }
+
             Btn.MouseButton1Click:Connect(function()
                 local char = LocalPlayer.Character
                 if char and char:FindFirstChild("Head") then
                     local existing = char:FindFirstChild("AHHub_Cosmetic_" .. assetName)
                     if existing then existing:Destroy() end
 
-                    local Model = Instance.new("Model")
-                    Model.Name = "AHHub_Cosmetic_" .. assetName
-
-                    if assetName == "Top Hat" then
-                        local brim = Instance.new("Part")
-                        brim.Size = Vector3.new(1.4, 0.15, 1.4)
-                        brim.Color = Color3.fromRGB(20, 20, 20)
-                        brim.Parent = Model
-
-                        local cylinder = Instance.new("Part")
-                        cylinder.Size = Vector3.new(1.1, 1.0, 1.1)
-                        cylinder.Shape = Enum.PartType.Cylinder
-                        cylinder.Color = Color3.fromRGB(20, 20, 20)
-                        cylinder.CFrame = CFrame.new(0, 0.6, 0) * CFrame.Angles(0, 0, math.rad(90))
-                        cylinder.Parent = Model
-
-                        local band = Instance.new("Part")
-                        band.Size = Vector3.new(1.12, 0.2, 1.12)
-                        band.Shape = Enum.PartType.Cylinder
-                        band.Color = Theme.OrangeAccent
-                        band.CFrame = CFrame.new(0, 0.25, 0) * CFrame.Angles(0, 0, math.rad(90))
-                        band.Parent = Model
-
-                        for _, part in ipairs(Model:GetChildren()) do
-                            local weld = Instance.new("WeldConstraint")
-                            weld.Part0 = char.Head
-                            weld.Part1 = part
-                            weld.Parent = part
-                        end
-                        brim.CFrame = char.Head.CFrame + Vector3.new(0, 1.15, 0)
-                    else
-                        local visor = Instance.new("Part")
-                        visor.Size = Vector3.new(1.15, 0.35, 0.65)
-                        visor.Color = Theme.OrangeAccent
-                        visor.Material = Enum.Material.Neon
-                        visor.Parent = Model
-
-                        local weld = Instance.new("WeldConstraint")
-                        weld.Part0 = char.Head
-                        weld.Part1 = visor
-                        weld.Parent = visor
-                        visor.CFrame = char.Head.CFrame + Vector3.new(0, 0.1, -0.5)
+                    local assetId = assetIds[assetName]
+                    if assetId then
+                        task.spawn(function()
+                            local success, model = pcall(function()
+                                return InsertService:LoadAsset(assetId)
+                            end)
+                            if success and model then
+                                model.Name = "AHHub_Cosmetic_" .. assetName
+                                local accessories = model:GetChildren()
+                                for _, acc in ipairs(accessories) do
+                                    if acc:IsA("Accessory") or acc:IsA("Model") then
+                                        acc.Parent = char
+                                        AHHubLib:Notify("Cosmetics", assetName .. " loaded via Roblox Catalog!", 2)
+                                        return
+                                    end
+                                end
+                                model:Destroy()
+                            end
+                            AHHubLib:Notify("Cosmetics Error", "Could not fetch catalog asset ID.", 2)
+                        end)
                     end
-
-                    Model.Parent = char
-                    AHHubLib:Notify("Cosmetics", assetName .. " equipped successfully!", 2)
                 end
             end)
         end
@@ -953,9 +941,6 @@ function AHHubLib:CreateWindow()
         return CreateElementBuilder(MainTabFrame)
     end
 
-    -- =========================================================================
-    -- GUARANTEED NATIVE DRAWING ESP RENDERER API EXPOSURE
-    -- =========================================================================
     local ESPRenderer = {
         ActiveDrawings = {},
         Connections = {},
@@ -1085,7 +1070,6 @@ function AHHubLib:CreateWindow()
         end
     end))
 
-    -- Expose method directly on Window/Controller and Library root
     function Controller:AddESPRenderer()
         return ESPRenderer
     end
