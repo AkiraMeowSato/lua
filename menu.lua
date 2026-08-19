@@ -4,7 +4,7 @@
 -- =========================================================================
 
 local CustomLib = {
-    Version = "1.0.0",
+    Version = "1.1.0",
     Author = "Custom",
     Title = "FATALITY",
     Defaults = {}
