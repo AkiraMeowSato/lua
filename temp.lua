@@ -1437,9 +1437,9 @@ task.spawn(function()
     UtilitiesTab:AddButton("Trigger Test Notification", "Sends a custom notification popup on screen.", function()
         AHHubLib:Notify("A&H Hub Test", "This is an interactive test notification message!", 4)
     end)
-
-    UtilitiesTab:AddToggle("God Mode Simulation", "util_godmode", false, "Simulates incoming configuration toggle updates.", function(state)
-        AHHubLib:Notify("God Mode", "God Mode is now " .. (state and "Active" | "Inactive"), 2)
+        
+        UtilitiesTab:AddToggle("God Mode Simulation", "util_godmode", false, "Simulates incoming configuration toggle updates.", function(state)
+        AHHubLib:Notify("God Mode", "God Mode is now " .. (state and "Active" or "Inactive"), 2)
     end)
 
     UtilitiesTab:AddSlider("WalkSpeed Multiplier", "util_speed", 16, 150, 16, "Adjusts character movement speed dynamically.", function(val)
