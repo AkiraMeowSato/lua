@@ -3,7 +3,7 @@
 -- =========================================================================
 
 local AHHubLib = {
-    Version = "1.9.8",
+    Version = "1.9.12",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
