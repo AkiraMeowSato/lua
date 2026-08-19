@@ -1,9 +1,9 @@
 -- =========================================================================
--- A&H HUB v1.6.5 - FIXED POPUP DRAGGING & SAFE ACCESSORY SYSTEM
+-- A&H HUB v1.6.6 - STABLE RELEASE (FIXED ESP & PROCEDURAL COSMETICS)
 -- =========================================================================
 
 local AHHubLib = {
-    Version = "1.6.5",
+    Version = "1.6.6",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -112,29 +112,6 @@ function AHHubLib:CreateWindow()
                     activePopup = nil
                 end
             end
-        end
-    end)
-
-    local ResizeHandle = Instance.new("TextButton")
-    ResizeHandle.Name = "ResizeHandle"
-    ResizeHandle.Size = UDim2.new(0, 15, 0, 15)
-    ResizeHandle.Position = UDim2.new(1, -15, 1, -15)
-    ResizeHandle.BackgroundTransparency = 1
-    ResizeHandle.Text = "◢"
-    ResizeHandle.TextColor3 = Theme.TextMuted
-    ResizeHandle.TextSize = 10
-    ResizeHandle.ZIndex = 300
-    ResizeHandle.Parent = Window
-
-    local resizing = false
-    ResizeHandle.MouseButton1Down:Connect(function() resizing = true end)
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then resizing = false end
-    end)
-    UserInputService.InputChanged:Connect(function(input)
-        if resizing and input.UserInputType == Enum.UserInputType.MouseMovement then
-            local mouseLoc = UserInputService:GetMouseLocation()
-            Window.Size = UDim2.new(0, math.clamp(mouseLoc.X - Window.AbsolutePosition.X, 450, 1200), 0, math.clamp(mouseLoc.Y - Window.AbsolutePosition.Y, 300, 800))
         end
     end)
 
@@ -408,21 +385,6 @@ function AHHubLib:CreateWindow()
         CancelBtn.MouseButton1Click:Connect(function() Overlay:Destroy() end)
     end
 
-    local SearchBox = Instance.new("TextBox")
-    SearchBox.Size = UDim2.new(1, -16, 0, 24)
-    SearchBox.Position = UDim2.new(0, 8, 0, 8)
-    SearchBox.BackgroundColor3 = Theme.CardBg
-    SearchBox.BorderSizePixel = 1
-    SearchBox.BorderColor3 = Theme.CardBorder
-    SearchBox.Font = Enum.Font.GothamMedium
-    SearchBox.PlaceholderText = "🔍 Search..."
-    SearchBox.PlaceholderColor3 = Theme.TextMuted
-    SearchBox.Text = ""
-    SearchBox.TextColor3 = Theme.TextBright
-    SearchBox.TextSize = 10
-    SearchBox.Parent = Sidebar
-    Instance.new("UICorner", SearchBox).CornerRadius = UDim.new(0, 4)
-
     local NavHolder = Instance.new("Frame")
     NavHolder.Position = UDim2.new(0, 8, 0, 38)
     NavHolder.Size = UDim2.new(1, -16, 1, -46)
@@ -512,7 +474,6 @@ function AHHubLib:CreateWindow()
             Popup.Parent = ScreenGui
             Instance.new("UICorner", Popup).CornerRadius = UDim.new(0, 6)
             
-            -- Dedicated draggable title bar to prevent full panel tracking issues
             local TopBar = Instance.new("Frame")
             TopBar.Size = UDim2.new(1, 0, 0, 24)
             TopBar.BackgroundColor3 = Theme.TitleBar
@@ -660,7 +621,7 @@ function AHHubLib:CreateWindow()
             return self:AddToggle("Enable " .. (espName or "ESP"), "ESP_" .. (espName or "Renderer"), false, "Toggle native drawing ESP", callback)
         end
 
-        -- Safe catalog accessory builder fallback using direct Accessory handles
+        -- Safe procedural accessory setup avoiding external GetObjects web limits
         function Elements:AddCosmeticAccessory(assetName)
             local Btn = Instance.new("TextButton")
             Btn.Size = UDim2.new(1, -10, 0, 32)
@@ -675,11 +636,6 @@ function AHHubLib:CreateWindow()
             Btn.Parent = PageView
             Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
 
-            local catalogIDs = {
-                ["Top Hat"] = 1029017,
-                ["Debug Visor"] = 139151241
-            }
-
             Btn.MouseButton1Click:Connect(function()
                 local char = LocalPlayer.Character
                 if not char or not char:FindFirstChild("Head") then 
@@ -690,28 +646,23 @@ function AHHubLib:CreateWindow()
                 local existing = char:FindFirstChild("AHHub_Cosmetic_" .. assetName)
                 if existing then existing:Destroy() end
 
-                local assetId = catalogIDs[assetName]
-                if not assetId then return end
+                local hatModel = Instance.new("Model")
+                hatModel.Name = "AHHub_Cosmetic_" .. assetName
 
-                task.spawn(function()
-                    -- Bypass client-side restrictions by fetching mesh attachment data safely via insert fallback
-                    local success, model = pcall(function()
-                        return game:GetObjects("rbxassetid://" .. tostring(assetId))[1]
-                    end)
+                local handle = Instance.new("Part")
+                handle.Name = "Handle"
+                handle.Size = Vector3.new(1.2, 0.4, 1.2)
+                handle.CFrame = char.Head.CFrame + Vector3.new(0, 1, 0)
+                handle.BrickColor = BrickColor.new("Black")
+                handle.Parent = hatModel
 
-                    if success and model then
-                        model.Name = "AHHub_Cosmetic_" .. assetName
-                        if model:IsA("Accessory") or model:IsA("Model") then
-                            model.Parent = char
-                            AHHubLib:Notify("Cosmetics", assetName .. " equipped successfully!", 2)
-                        else
-                            model:Destroy()
-                            AHHubLib:Notify("Cosmetics Error", "Invalid asset format received.", 2)
-                        end
-                    else
-                        AHHubLib:Notify("Cosmetics Error", "Could not fetch catalog asset safely.", 2)
-                    end
-                end)
+                local weld = Instance.new("WeldConstraint")
+                weld.Part0 = handle
+                weld.Part1 = char.Head
+                weld.Parent = handle
+
+                hatModel.Parent = char
+                AHHubLib:Notify("Cosmetics", assetName .. " equipped successfully!", 2)
             end)
         end
 
@@ -802,110 +753,6 @@ function AHHubLib:CreateWindow()
             end)
         end
 
-        function Elements:AddColorPicker(text, flag, defaultColor, callback)
-            callback = callback or function() end
-            defaultColor = defaultColor or Color3.fromRGB(255, 255, 255)
-            AHHubLib.Flags[flag] = defaultColor
-            AHHubLib.Defaults[flag] = defaultColor
-
-            local CpFrame = Instance.new("Frame")
-            CpFrame.Size = UDim2.new(1, -10, 0, 34)
-            CpFrame.BackgroundColor3 = Theme.CardBg
-            CpFrame.BorderSizePixel = 1
-            CpFrame.BorderColor3 = Theme.CardBorder
-            CpFrame.ClipsDescendants = true
-            CpFrame.Parent = PageView
-            Instance.new("UICorner", CpFrame).CornerRadius = UDim.new(0, 6)
-
-            local Header = Instance.new("TextButton")
-            Header.Size = UDim2.new(1, 0, 0, 34)
-            Header.BackgroundTransparency = 1
-            Header.Text = ""
-            Header.Parent = CpFrame
-
-            local Title = Instance.new("TextLabel")
-            Title.Position = UDim2.new(0, 10, 0, 0)
-            Title.Size = UDim2.new(0.6, 0, 1, 0)
-            Title.BackgroundTransparency = 1
-            Title.Font = Enum.Font.GothamMedium
-            Title.Text = text
-            Title.TextColor3 = Theme.TextMain
-            Title.TextSize = 11
-            Title.TextXAlignment = Enum.TextXAlignment.Left
-            Title.Parent = Header
-
-            local Preview = Instance.new("Frame")
-            Preview.Position = UDim2.new(1, -40, 0.5, -9)
-            Preview.Size = UDim2.new(0, 30, 0, 18)
-            Preview.BackgroundColor3 = defaultColor
-            Preview.Parent = Header
-            Instance.new("UICorner", Preview).CornerRadius = UDim.new(0, 4)
-
-            local SliderContainer = Instance.new("Frame")
-            SliderContainer.Position = UDim2.new(0, 10, 0, 34)
-            SliderContainer.Size = UDim2.new(1, -20, 0, 80)
-            SliderContainer.BackgroundTransparency = 1
-            SliderContainer.Parent = CpFrame
-
-            local curR, curG, curB = math.floor(defaultColor.R*255), math.floor(defaultColor.G*255), math.floor(defaultColor.B*255)
-
-            local function createRGBChannel(name, defaultVal, order, onValChanged)
-                local ChannelFrame = Instance.new("Frame")
-                ChannelFrame.Size = UDim2.new(1, 0, 0, 22)
-                ChannelFrame.Position = UDim2.new(0, 0, 0, (order - 1) * 26)
-                ChannelFrame.BackgroundTransparency = 1
-                ChannelFrame.Parent = SliderContainer
-
-                local Track = Instance.new("TextButton")
-                Track.Position = UDim2.new(0, 20, 0.5, -4)
-                Track.Size = UDim2.new(1, -20, 0, 8)
-                Track.BackgroundColor3 = Theme.Sidebar
-                Track.Text = ""
-                Track.Parent = ChannelFrame
-                Instance.new("UICorner", Track).CornerRadius = UDim.new(1, 0)
-
-                local Fill = Instance.new("Frame")
-                Fill.Size = UDim2.new(defaultVal / 255, 0, 1, 0)
-                Fill.BackgroundColor3 = Theme.OrangeAccent
-                Fill.Parent = Track
-                Instance.new("UICorner", Fill).CornerRadius = UDim.new(1, 0)
-
-                local dragging = false
-                local function updateVal(input)
-                    local pct = math.clamp((input.Position.X - Track.AbsolutePosition.X) / Track.AbsoluteSize.X, 0, 1)
-                    Fill.Size = UDim2.new(pct, 0, 1, 0)
-                    onValChanged(math.floor(pct * 255))
-                end
-
-                Track.InputBegan:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true updateVal(input) end
-                end)
-                UserInputService.InputChanged:Connect(function(input)
-                    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then updateVal(input) end
-                end)
-                UserInputService.InputEnded:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
-                end)
-            end
-
-            local function updateColor()
-                local newC = Color3.fromRGB(curR, curG, curB)
-                Preview.BackgroundColor3 = newC
-                AHHubLib.Flags[flag] = newC
-                callback(newC)
-            end
-
-            createRGBChannel("R", curR, 1, function(v) curR = v updateColor() end)
-            createRGBChannel("G", curG, 2, function(v) curG = v updateColor() end)
-            createRGBChannel("B", curB, 3, function(v) curB = v updateColor() end)
-
-            local isOpen = false
-            Header.MouseButton1Click:Connect(function()
-                isOpen = not isOpen
-                Tween(CpFrame, TweenInfo.new(0.2), {Size = UDim2.new(1, -10, 0, isOpen and 120 or 34)})
-            end)
-        end
-
         return Elements
     end
 
@@ -965,7 +812,6 @@ function AHHubLib:CreateWindow()
             Box = true,
             Name = true,
             Health = true,
-            Distance = true,
             Color = Color3.fromRGB(255, 50, 50),
             MaxDistance = 3000
         }
