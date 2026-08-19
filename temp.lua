@@ -1,9 +1,9 @@
 -- =========================================================================
--- A&H HUB v1.7.2 - FIXED POPUP CLICKS & VISIBILITY CONTRAST
+-- A&H HUB v1.7.3 - FIXED SUB-MENU BUILDER & RIGHT CTRL TOGGLE
 -- =========================================================================
 
 local AHHubLib = {
-    Version = "1.7.2",
+    Version = "1.7.3",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -23,13 +23,13 @@ local Theme = {
     Bg = Color3.fromRGB(20, 14, 11),
     WindowBg = Color3.fromRGB(28, 20, 16),
     Sidebar = Color3.fromRGB(24, 18, 14),
-    CardBg = Color3.fromRGB(42, 32, 26),         -- Lighter background for better contrast
-    CardBorder = Color3.fromRGB(80, 60, 48),     -- Sharper border
+    CardBg = Color3.fromRGB(42, 32, 26),
+    CardBorder = Color3.fromRGB(80, 60, 48),
     TitleBar = Color3.fromRGB(36, 26, 21),
     PopupBg = Color3.fromRGB(32, 23, 18),
-    TextBright = Color3.fromRGB(255, 255, 255),  -- Pure white for highest legibility
-    TextMain = Color3.fromRGB(240, 225, 210),    -- Brighter main text
-    TextMuted = Color3.fromRGB(190, 165, 145),   -- Clearer muted text
+    TextBright = Color3.fromRGB(255, 255, 255),
+    TextMain = Color3.fromRGB(240, 225, 210),
+    TextMuted = Color3.fromRGB(190, 165, 145),
     OrangeAccent = Color3.fromRGB(230, 140, 60),
     TabSelected = Color3.fromRGB(58, 42, 33),
     Disabled = Color3.fromRGB(50, 40, 35),
@@ -154,7 +154,7 @@ function AHHubLib:CreateWindow()
     TooltipLabel.TextColor3 = Theme.TextBright
     TooltipLabel.TextSize = 11
     TooltipLabel.Visible = false
-    TooltipLabel.ZIndex = 400
+    TooltipLabel.ZIndex = 900
     TooltipLabel.Parent = ScreenGui
     Instance.new("UICorner", TooltipLabel).CornerRadius = UDim.new(0, 6)
 
@@ -311,6 +311,12 @@ function AHHubLib:CreateWindow()
 
     MakeCircularButton(Theme.YellowWarn, Color3.fromRGB(240, 190, 80), 0, ToggleMinimize)
     DockIcon.MouseButton1Click:Connect(ToggleMinimize)
+
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if not gameProcessed and input.KeyCode == Enum.KeyCode.RightControl then
+            ToggleMinimize()
+        end
+    end)
 
     MakeCircularButton(Theme.GreenOk, Color3.fromRGB(90, 220, 110), 22, function()
         if isMinimized then return end
@@ -631,6 +637,7 @@ function AHHubLib:CreateWindow()
                         OpenFloatingPopup(Btn, configFunc)
                     end)
                 end)
+                return Obj
             end
 
             Btn.MouseButton1Click:Connect(function()
@@ -701,6 +708,7 @@ function AHHubLib:CreateWindow()
                         OpenFloatingPopup(Frame, configFunc)
                     end)
                 end)
+                return ToggleObject
             end
 
             Switch.MouseButton1Click:Connect(function() ToggleObject:Set(not toggled) end)
