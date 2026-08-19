@@ -1,9 +1,9 @@
 -- =========================================================================
--- A&H HUB v1.7.0 - POLISHED PROFILE, CONTRASTING WINDOW & FLUID ANIMATIONS
+-- A&H HUB v1.7.1 - FIXED TOGGLE SUB-MENU RETURN OBJECT
 -- =========================================================================
 
 local AHHubLib = {
-    Version = "1.7.0",
+    Version = "1.7.1",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -697,6 +697,22 @@ function AHHubLib:CreateWindow()
                 AHHubLib.Flags[flag] = toggled
                 Tween(Switch, TweenInfo.new(0.18, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundColor3 = toggled and Theme.OrangeAccent or Theme.Sidebar})
                 callback(toggled)
+            end
+
+            function ToggleObject:AddSubMenu(configFunc)
+                local Gear = Instance.new("TextButton")
+                Gear.Size = UDim2.new(0, 24, 0, 24)
+                Gear.Position = UDim2.new(1, -70, 0.5, -12)
+                Gear.BackgroundTransparency = 1
+                Gear.Font = Enum.Font.GothamBold
+                Gear.Text = "⚙"
+                Gear.TextColor3 = Theme.TextMuted
+                Gear.TextSize = 12
+                Gear.ZIndex = 10
+                Gear.Parent = Frame
+                Gear.MouseButton1Click:Connect(function()
+                    OpenFloatingPopup(Frame, configFunc)
+                end)
             end
 
             Switch.MouseButton1Click:Connect(function() ToggleObject:Set(not toggled) end)
