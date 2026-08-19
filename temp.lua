@@ -1,9 +1,9 @@
 -- =========================================================================
--- A&H HUB v1.7.4 - SUBMENU & NOTIFICATION FIXES
+-- A&H HUB v1.7.5 - SUBMENU VISIBILITY & NOTIFICATION FIXES
 -- =========================================================================
 
 local AHHubLib = {
-    Version = "1.7.4",
+    Version = "1.7.5",
     Author = "Nyrae",
     Title = "A&H HUB",
     Defaults = {}
@@ -26,7 +26,9 @@ local Theme = {
     CardBg = Color3.fromRGB(42, 32, 26),
     CardBorder = Color3.fromRGB(80, 60, 48),
     TitleBar = Color3.fromRGB(36, 26, 21),
-    PopupBg = Color3.fromRGB(45, 34, 28), -- Lighter background for popup to contrast elements
+    PopupBg = Color3.fromRGB(55, 42, 35),       -- Distinct, lighter backdrop for submenus
+    PopupBtn = Color3.fromRGB(68, 52, 43),      -- Clear contrasting background for submenu buttons
+    PopupBorder = Color3.fromRGB(110, 85, 68),  -- Sharp borders so buttons stand out clearly
     TextBright = Color3.fromRGB(255, 255, 255),
     TextMain = Color3.fromRGB(240, 225, 210),
     TextMuted = Color3.fromRGB(190, 165, 145),
@@ -356,6 +358,7 @@ function AHHubLib:CreateWindow()
         Card.BackgroundTransparency = 0.1
         Card.BorderSizePixel = 1
         Card.BorderColor3 = Theme.OrangeAccent
+        Card.ZIndex = 501
         Card.Parent = NotificationHolder
         Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 8)
 
@@ -368,6 +371,7 @@ function AHHubLib:CreateWindow()
         Txt.TextColor3 = Theme.OrangeAccent
         Txt.TextSize = 12
         Txt.TextXAlignment = Enum.TextXAlignment.Left
+        Txt.ZIndex = 502
         Txt.Parent = Card
 
         local Sub = Instance.new("TextLabel")
@@ -380,6 +384,7 @@ function AHHubLib:CreateWindow()
         Sub.TextSize = 10
         Sub.TextXAlignment = Enum.TextXAlignment.Left
         Sub.TextWrapped = true
+        Sub.ZIndex = 502
         Sub.Parent = Card
 
         task.delay(duration, function()
@@ -508,6 +513,86 @@ function AHHubLib:CreateWindow()
         end
         RegisterScrollAutoResize()
 
+        -- Custom builder helper for elements inside popup submenus with distinct styling
+        local function CreatePopupElementBuilder(SubPageView)
+            local SubElements = {}
+
+            function SubElements:AddButton(text, tooltipText, callback)
+                callback = callback or function() end
+                local Btn = Instance.new("TextButton")
+                Btn.Size = UDim2.new(1, -10, 0, 30)
+                Btn.BackgroundColor3 = Theme.PopupBtn
+                Btn.BorderSizePixel = 1
+                Btn.BorderColor3 = Theme.PopupBorder
+                Btn.Font = Enum.Font.GothamMedium
+                Btn.Text = text
+                Btn.TextColor3 = Theme.TextBright
+                Btn.TextSize = 11
+                Btn.AutoButtonColor = false
+                Btn.ZIndex = 810
+                Btn.Parent = SubPageView
+                Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
+                BindTooltip(Btn, tooltipText)
+
+                Btn.MouseEnter:Connect(function() Tween(Btn, TweenInfo.new(0.12), {BackgroundColor3 = Theme.TabSelected, BorderColor3 = Theme.OrangeAccent}) end)
+                Btn.MouseLeave:Connect(function() Tween(Btn, TweenInfo.new(0.12), {BackgroundColor3 = Theme.PopupBtn, BorderColor3 = Theme.PopupBorder}) end)
+
+                Btn.MouseButton1Click:Connect(callback)
+                return SubElements
+            end
+
+            function SubElements:AddToggle(text, flag, defaultState, tooltipText, callback)
+                callback = callback or function() end
+                local toggled = defaultState or false
+                AHHubLib.Flags[flag] = toggled
+                AHHubLib.Defaults[flag] = defaultState
+                AHHubLib.ToggleCallbacks[flag] = callback
+
+                local Frame = Instance.new("Frame")
+                Frame.Size = UDim2.new(1, -10, 0, 30)
+                Frame.BackgroundColor3 = Theme.PopupBtn
+                Frame.BorderSizePixel = 1
+                Frame.BorderColor3 = Theme.PopupBorder
+                Frame.ZIndex = 810
+                Frame.Parent = SubPageView
+                Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 6)
+                BindTooltip(Frame, tooltipText)
+
+                local Title = Instance.new("TextLabel")
+                Title.Position = UDim2.new(0, 10, 0, 0)
+                Title.Size = UDim2.new(0.6, 0, 1, 0)
+                Title.BackgroundTransparency = 1
+                Title.Font = Enum.Font.GothamMedium
+                Title.Text = text
+                Title.TextColor3 = Theme.TextBright
+                Title.TextSize = 11
+                Title.TextXAlignment = Enum.TextXAlignment.Left
+                Title.ZIndex = 811
+                Title.Parent = Frame
+
+                local Switch = Instance.new("TextButton")
+                Switch.Position = UDim2.new(1, -36, 0.5, -8)
+                Switch.Size = UDim2.new(0, 28, 0, 16)
+                Switch.BackgroundColor3 = toggled and Theme.OrangeAccent or Theme.Sidebar
+                Switch.Text = ""
+                Switch.ZIndex = 811
+                Switch.Parent = Frame
+                Instance.new("UICorner", Switch).CornerRadius = UDim.new(1, 0)
+
+                local function setToggle(state)
+                    toggled = state
+                    AHHubLib.Flags[flag] = toggled
+                    Tween(Switch, TweenInfo.new(0.18, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {BackgroundColor3 = toggled and Theme.OrangeAccent or Theme.Sidebar})
+                    callback(toggled)
+                end
+
+                Switch.MouseButton1Click:Connect(function() setToggle(not toggled) end)
+                return SubElements
+            end
+
+            return SubElements
+        end
+
         function Elements:AddSection(sectionTitle)
             local SecFrame = Instance.new("Frame")
             SecFrame.Size = UDim2.new(1, -10, 0, 26)
@@ -565,7 +650,7 @@ function AHHubLib:CreateWindow()
             Popup.BackgroundColor3 = Theme.PopupBg
             Popup.BackgroundTransparency = 0
             Popup.BorderSizePixel = 1
-            Popup.BorderColor3 = Theme.OrangeAccent
+            Popup.BorderColor3 = Theme.PopupBorder
             Popup.ZIndex = 800
             Popup.Parent = ScreenGui
             Instance.new("UICorner", Popup).CornerRadius = UDim.new(0, 8)
@@ -612,7 +697,7 @@ function AHHubLib:CreateWindow()
                 ScrollSub.CanvasSize = UDim2.new(0, 0, 0, SubLayout.AbsoluteContentSize.Y + 10)
             end)
 
-            configureCallback(CreateElementBuilder(ScrollSub))
+            configureCallback(CreatePopupElementBuilder(ScrollSub))
         end
 
         function Elements:AddButton(text, tooltipText, callback)
