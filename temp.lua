@@ -869,9 +869,12 @@ function AHHubLib:CreateWindow()
             GearBtn.ZIndex = 805
             GearBtn.Parent = Frame
 
+            -- Automatically adjust and place the settings gear closely right next to the dynamic text number
             local function updateGearPosition()
                 local textWidth = ValLbl.TextBounds.X
-                GearBtn.Position = UDim2.new(1, -textWidth - 36, 0, 0)
+                ValLbl.Size = UDim2.new(0, textWidth + 5, 0, 18)
+                ValLbl.Position = UDim2.new(1, -textWidth - 34, 0, 4)
+                GearBtn.Position = UDim2.new(1, -28, 0, 0)
             end
 
             ValLbl:GetPropertyChangedSignal("Text"):Connect(updateGearPosition)
